@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#e0121f" />
+  <title>Kessoku Family — Admin</title>
+  <meta name="description" content="Panel admin Kessoku Family — kelola foto profil member." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="admin">
+  <div class="bg-layer" aria-hidden="true">
+    <div class="grid-lines"></div>
+    <span class="orb orb--1"></span><span class="orb orb--2"></span><span class="orb orb--3"></span>
+    <div class="noise"></div>
+  </div>
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+  <!-- TOPBAR • LIQUID GLASS -->
+  <div class="topbar">
+    <a href="index.html" class="brand" aria-label="Kessoku Family">
+      <span class="brand__mark" data-logo data-fallback="KF">KF</span>
+      <span class="brand__text">Kessoku <b>Family</b></span>
+    </a>
+    <a href="admin.html" class="gear is-active" aria-label="Panel Admin">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.5-2-3.5-2.4 1a7.6 7.6 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5a7.6 7.6 0 0 0-2.6 1.5l-2.4-1-2 3.5 2 1.5a7.6 7.6 0 0 0 0 3l-2 1.5 2 3.5 2.4-1c.8.7 1.7 1.2 2.6 1.5l.4 2.5h4l.4-2.5c.9-.3 1.8-.8 2.6-1.5l2.4 1 2-3.5-2-1.5Z"/></svg>
+    </a>
+  </div>
+
+  <nav class="dock" id="dock" aria-label="Navigasi utama">
+    <span class="dock__pill" aria-hidden="true"></span>
+    <a href="index.html" class="dock__item" data-i="0">Home</a>
+    <a href="team.html" class="dock__item" data-i="1">Team</a>
+  </nav>
+
+  <main>
+    <!-- ===== LOGIN GATE (setting terkunci) ===== -->
+    <section class="section login-wrap" id="loginGate" hidden>
+      <div class="container login-inner">
+        <div class="gcard gcard--ring login-card">
+          <span class="login-lock" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          </span>
+          <span class="eyebrow">Area Terbatas</span>
+          <h1>Login <span class="gradient-text">Setting</span></h1>
+          <p>Pilih jenis akun, lalu masukkan username &amp; password untuk membuka panel pengaturan.</p>
+          <div class="login-tabs" id="loginTabs" role="tablist" aria-label="Jenis akun">
+            <span class="login-tabs__pill" aria-hidden="true"></span>
+            <button type="button" class="login-tab is-active" data-mode="owner" role="tab" aria-selected="true">Owner</button>
+            <button type="button" class="login-tab" data-mode="admin" role="tab" aria-selected="false">Admin</button>
+          </div>
+          <form class="login-form" id="loginForm">
+            <div class="field">
+              <input type="text" id="loginUser" placeholder=" " required autocomplete="username" autofocus>
+              <label for="loginUser">Nama / Username</label>
+              <span class="field__line"></span>
+            </div>
+            <div class="field">
+              <input type="password" id="loginPass" placeholder=" " required autocomplete="current-password">
+              <label for="loginPass">Password</label>
+              <span class="field__line"></span>
+            </div>
+            <button type="submit" class="btn btn--primary btn--block" id="loginBtn"><span>Masuk</span></button>
+          </form>
+          <p class="login-hint">Area terbatas untuk pengelola. Hubungi owner bila lupa akun.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SETTING (tampil setelah login) ===== -->
+    <div id="settingsContent" hidden>
+      <section class="page-head">
+        <div class="container">
+          <span class="eyebrow reveal">Admin Panel</span>
+          <h1 class="reveal" style="--d:1">Kelola <span class="gradient-text">Setting</span></h1>
+          <p class="reveal" style="--d:2">Atur logo brand, akun admin, dan foto profil member Kessoku Family.</p>
+        </div>
+      </section>
+
+      <section class="section" style="padding-top:20px">
+        <div class="container">
+          <div class="session-bar reveal">
+            <span class="session-bar__who"><span class="dot"></span>Masuk sebagai <b id="whoami">—</b></span>
+            <button class="btn btn--ghost btn--sm" id="logoutBtn" type="button"><span>Logout</span></button>
+          </div>
+
+          <article class="gcard admin-logo reveal">
+            <div class="admin-logo__preview"><span class="brand__mark" data-logo data-fallback="KF">KF</span></div>
+            <div class="admin-logo__body">
+              <h3>Logo Brand</h3>
+              <p>Ganti logo marga yang tampil di navbar &amp; hero untuk menunjukkan brand Kessoku Family.</p>
+              <div class="admin-logo__actions">
+                <button class="icon-btn icon-btn--primary" id="logoUpload">
+                  <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg> Ganti Logo
+                </button>
+                <button class="icon-btn icon-btn--danger" id="logoRemove">
+                  <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg> Hapus
+                </button>
+              </div>
+            </div>
+            <input type="file" id="logoInput" accept="image/*" hidden>
+          </article>
+
+          <!-- Kelola akun & jabatan (khusus owner) -->
+          <article class="gcard accounts-card reveal" id="accountsCard" data-owner hidden>
+            <div class="accounts-card__head">
+              <h3>Kelola Akun Owner &amp; Admin</h3>
+              <p>Bikin akun <b>Owner</b> maupun <b>Admin</b> (Admin, Leader Admin, Co-Owner). Hapus akun apa pun kecuali owner bawaan. Hanya owner yang bisa mengelola.</p>
+            </div>
+            <form class="add-admin add-admin--roles" id="addAdminForm">
+              <div class="field">
+                <input id="adminName" placeholder=" " required>
+                <label for="adminName">Nama Tampilan</label><span class="field__line"></span>
+              </div>
+              <div class="field">
+                <input id="adminUser" placeholder=" " required autocomplete="off">
+                <label for="adminUser">Username</label><span class="field__line"></span>
+              </div>
+              <div class="field">
+                <input type="password" id="adminPass" placeholder=" " required autocomplete="new-password">
+                <label for="adminPass">Password</label><span class="field__line"></span>
+              </div>
+              <div class="field">
+                <select id="adminRole" required>
+                  <option value="admin">Admin</option>
+                  <option value="leader">Leader Admin</option>
+                  <option value="co-owner">Co-Owner</option>
+                  <option value="owner">Owner</option>
+                </select>
+                <label for="adminRole">Jabatan</label><span class="field__line"></span>
+              </div>
+              <button type="submit" class="btn btn--primary"><span>+ Tambah Akun</span></button>
+            </form>
+            <div class="account-list" id="accountList"></div>
+          </article>
+
+          <!-- Kelola Total Member (manual) — owner & admin -->
+          <article class="gcard accounts-card reveal" id="totalCard">
+            <div class="accounts-card__head">
+              <h3>Total Member Komunitas</h3>
+              <p>Ganti angka <b>total member</b> yang tampil di halaman Home &amp; panel daftar secara manual. Kosongkan kolom lalu simpan untuk kembali menghitung otomatis dari jumlah member tiap gen.</p>
+            </div>
+            <div class="add-admin add-admin--total">
+              <div class="field">
+                <input type="number" min="0" id="totalMember" placeholder=" ">
+                <label for="totalMember">Total Member (mis. 376)</label><span class="field__line"></span>
+              </div>
+              <button type="button" class="btn btn--primary" id="totalSave"><span>Simpan</span></button>
+              <button type="button" class="btn btn--ghost" id="totalAuto"><span>Hitung Otomatis</span></button>
+            </div>
+            <p class="api-status" id="totalStatus">—</p>
+          </article>
+
+          <!-- Kelola Generasi (owner & admin) -->
+          <article class="gcard accounts-card reveal" id="gensCard">
+            <div class="accounts-card__head">
+              <h3>Kelola Generasi (Gen)</h3>
+              <p>Bikin gen baru, isi link grup &amp; jumlah member (bisa diubah manual), lalu aktif/nonaktifkan gen. Setiap perubahan langsung tampil di halaman Home &amp; halaman daftar.</p>
+            </div>
+            <form class="add-admin add-gen" id="addGenForm">
+              <div class="field">
+                <input id="genName" placeholder=" " required>
+                <label for="genName">Nama Gen (mis. GenV4)</label><span class="field__line"></span>
+              </div>
+              <div class="field">
+                <input id="genLink" placeholder=" ">
+                <label for="genLink">Link Grup (opsional)</label><span class="field__line"></span>
+              </div>
+              <div class="field">
+                <input type="number" min="0" id="genMembers" placeholder=" " value="0">
+                <label for="genMembers">Jumlah Member</label><span class="field__line"></span>
+              </div>
+              <button type="submit" class="btn btn--primary"><span>+ Tambah Gen</span></button>
+            </form>
+            <div class="gen-list" id="genList"></div>
+          </article>
+
+          <!-- Kelola Hashtag TikTok (owner & admin) -->
+          <article class="gcard accounts-card reveal" id="tagsCard">
+            <div class="accounts-card__head">
+              <h3>Kelola Hashtag TikTok</h3>
+              <p>Tambahkan hashtag yang mau dipantau. Isi/ubah jumlah pemakaian secara manual di kolom angkanya — cocok kalau bot/API belum nyambung.</p>
+            </div>
+            <form class="add-admin add-tag" id="addTagForm">
+              <div class="field">
+                <input id="tagInput" placeholder=" " required>
+                <label for="tagInput">Hashtag (mis. #kessokufamily)</label><span class="field__line"></span>
+              </div>
+              <button type="submit" class="btn btn--primary"><span>+ Tambah Hashtag</span></button>
+            </form>
+            <div class="tag-list" id="tagList"></div>
+          </article>
+
+          <!-- Kelola CN otomatis (bar CN di halaman daftar) -->
+          <article class="gcard accounts-card reveal" id="cnCard">
+            <div class="accounts-card__head">
+              <h3>Kelola CN Otomatis</h3>
+              <p>Tambah / hapus bar CN yang muncul di halaman daftar. Tulis kata <code>name</code> sebagai nama pendaftar.
+                Contoh: <code>"name" 𝖋𝖙`𝙆𝙎𝙁᭄</code> &rarr; otomatis jadi <code>𝙍𝘼𝙔𝙀𝙉 𝖋𝖙`𝙆𝙎𝙁᭄</code>. CN baru langsung muncul real-time.</p>
+            </div>
+            <form class="add-admin add-cn" id="addCnForm">
+              <div class="field">
+                <input id="cnTpl" placeholder=" " required>
+                <label for="cnTpl">Format CN baru (wajib pakai kata name)</label><span class="field__line"></span>
+              </div>
+              <button type="submit" class="btn btn--primary"><span>+ Tambah CN</span></button>
+            </form>
+            <div class="cn-list" id="cnList"></div>
+          </article>
+
+          <!-- Integrasi API / Database (khusus owner) -->
+          <article class="gcard accounts-card reveal" id="apiCard" data-owner hidden>
+            <div class="accounts-card__head">
+              <h3>Integrasi Database (Supabase)</h3>
+              <p>Hubungkan ke Supabase: isi <b>Base URL</b> dengan <code>https://&lt;project&gt;.supabase.co/rest/v1</code> dan <b>Anon Key</b> dari dashboard Supabase (Settings → API). Kosongkan untuk mode demo (data lokal).</p>
+            </div>
+            <div class="add-admin add-admin--api">
+              <div class="field">
+                <input id="apiBase" placeholder=" ">
+                <label for="apiBase">Base URL (…supabase.co/rest/v1)</label><span class="field__line"></span>
+              </div>
+              <div class="field">
+                <input id="apiKey" placeholder=" ">
+                <label for="apiKey">Anon Public Key</label><span class="field__line"></span>
+              </div>
+              <div class="field">
+                <input type="number" min="3" id="apiRefresh" placeholder=" ">
+                <label for="apiRefresh">Refresh (detik)</label><span class="field__line"></span>
+              </div>
+              <button type="button" class="btn btn--primary" id="apiSave"><span>Simpan</span></button>
+              <button type="button" class="btn btn--ghost" id="apiTest"><span>Tes Koneksi</span></button>
+            </div>
+            <p class="api-status" id="apiStatus">Mode demo — data lokal.</p>
+          </article>
+
+          <div class="admin-note reveal">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+            <span><b>Tampilan demo.</b> Data disimpan otomatis di browser ini (localStorage), jadi tetap ada walau halaman di-refresh. Format JPG/PNG, otomatis dikecilkan agar ringan.</span>
+          </div>
+
+          <div class="admin-toolbar reveal">
+            <a href="team.html" class="btn btn--ghost btn--sm"><span>Lihat halaman Team</span></a>
+            <button class="btn btn--ghost btn--sm" id="resetPhotos"><span>Reset semua foto</span></button>
+          </div>
+
+          <div class="admin-grid" id="adminGrid"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <span class="brand__mark">KF</span>
+        <span><b>Kessoku Family</b><small>Satu marga, satu support.</small></span>
+      </div>
+      <nav class="footer__links">
+        <a href="index.html">Home</a><a href="team.html">Team</a><a href="admin.html">Admin</a>
+      </nav>
+      <p class="footer__copy">© <span id="year"></span> Kessoku Family — #kessokufamily #kessokuclan #ksf</p>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="toast__icon" aria-hidden="true">✓</span>
+    <div class="toast__body"><b>Foto tersimpan</b><span>Foto profil berhasil diganti.</span></div>
+  </div>
+  <button class="to-top" id="toTop" aria-label="Kembali ke atas">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
+  <script src="config.js"></script>
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

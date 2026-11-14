@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#e0121f" />
+  <title>Kessoku Family — Team</title>
+  <meta name="description" content="Struktur pendiri dan admin Kessoku Family." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="team">
+  <div class="bg-layer" aria-hidden="true">
+    <div class="grid-lines"></div>
+    <span class="orb orb--1"></span><span class="orb orb--2"></span><span class="orb orb--3"></span>
+    <div class="noise"></div>
+  </div>
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+  <!-- TOPBAR • LIQUID GLASS -->
+  <div class="topbar">
+    <a href="index.html" class="brand" aria-label="Kessoku Family">
+      <span class="brand__mark" data-logo data-fallback="KF">KF</span>
+      <span class="brand__text">Kessoku <b>Family</b></span>
+    </a>
+    <a href="admin.html" class="gear" aria-label="Panel Admin">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.5-2-3.5-2.4 1a7.6 7.6 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5a7.6 7.6 0 0 0-2.6 1.5l-2.4-1-2 3.5 2 1.5a7.6 7.6 0 0 0 0 3l-2 1.5 2 3.5 2.4-1c.8.7 1.7 1.2 2.6 1.5l.4 2.5h4l.4-2.5c.9-.3 1.8-.8 2.6-1.5l2.4 1 2-3.5-2-1.5Z"/></svg>
+    </a>
+  </div>
+
+  <nav class="dock" id="dock" aria-label="Navigasi utama">
+    <span class="dock__pill" aria-hidden="true"></span>
+    <a href="index.html" class="dock__item" data-i="0">Home</a>
+    <a href="team.html" class="dock__item is-active" data-i="1">Team</a>
+  </nav>
+
+  <main>
+    <section class="page-head">
+      <div class="container">
+        <span class="eyebrow reveal">Struktur</span>
+        <h1 class="reveal" style="--d:1">Pendiri &amp; <span class="gradient-text">Team</span></h1>
+        <p class="reveal" style="--d:2">Orang-orang yang menjaga Kessoku Family tetap aktif, rapi, dan solid.</p>
+      </div>
+    </section>
+
+    <section class="section" id="struktur" style="padding-top:20px">
+      <div class="container">
+        <div class="founders" id="founders"></div>
+
+        <h3 class="team__subtitle reveal">Admin of Kessoku Family</h3>
+        <div class="team-grid" id="teamGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <span class="brand__mark">KF</span>
+        <span><b>Kessoku Family</b><small>Satu marga, satu support.</small></span>
+      </div>
+      <nav class="footer__links">
+        <a href="index.html">Home</a><a href="team.html">Team</a><a href="admin.html">Admin</a>
+      </nav>
+      <p class="footer__copy">© <span id="year"></span> Kessoku Family — #kessokufamily #kessokuclan #ksf</p>
+    </div>
+  </footer>
+
+  <button class="to-top" id="toTop" aria-label="Kembali ke atas">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
+  <script src="config.js"></script>
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

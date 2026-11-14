@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#e0121f" />
+  <title>Kessoku Family — Home</title>
+  <meta name="description" content="Kessoku Family — komunitas kreator & editor anime. Satu marga, satu support." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="home">
+  <div class="bg-layer" aria-hidden="true">
+    <div class="grid-lines"></div>
+    <span class="orb orb--1"></span><span class="orb orb--2"></span><span class="orb orb--3"></span>
+    <div class="noise"></div>
+  </div>
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+  <!-- TOPBAR • LIQUID GLASS -->
+  <div class="topbar">
+    <a href="index.html" class="brand" aria-label="Kessoku Family">
+      <span class="brand__mark" data-logo data-fallback="KF">KF</span>
+      <span class="brand__text">Kessoku <b>Family</b></span>
+    </a>
+    <a href="admin.html" class="gear" aria-label="Panel Admin">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.5-2-3.5-2.4 1a7.6 7.6 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5a7.6 7.6 0 0 0-2.6 1.5l-2.4-1-2 3.5 2 1.5a7.6 7.6 0 0 0 0 3l-2 1.5 2 3.5 2.4-1c.8.7 1.7 1.2 2.6 1.5l.4 2.5h4l.4-2.5c.9-.3 1.8-.8 2.6-1.5l2.4 1 2-3.5-2-1.5Z"/></svg>
+    </a>
+  </div>
+
+  <nav class="dock" id="dock" aria-label="Navigasi utama">
+    <span class="dock__pill" aria-hidden="true"></span>
+    <a href="index.html" class="dock__item is-active" data-i="0">Home</a>
+    <a href="team.html" class="dock__item" data-i="1">Team</a>
+  </nav>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero section" id="home">
+      <div class="hero__brandwrap">
+        <span class="hero__brandring" aria-hidden="true"></span>
+        <span class="hero__brandring hero__brandring--2" aria-hidden="true"></span>
+        <div class="hero__brandlogo" data-logo data-fallback="KF">KF</div>
+      </div>
+      <div class="container hero__grid">
+        <div class="hero__content">
+          <span class="badge reveal" style="--d:0"><span class="badge__dot"></span> Komunitas Kreator &amp; Editor Anime</span>
+          <h1 class="hero__title reveal" style="--d:1">Satu Marga,<br /><span class="gradient-text">Satu Support.</span></h1>
+          <p class="hero__desc reveal" style="--d:2">
+            <b>Kessoku Family</b> adalah rumah buat kreator, editor, dan pecinta anime yang saling support.
+            Daftarkan dirimu, temukan teman baru, dan tumbuh bareng di komunitas yang solid.
+          </p>
+          <div class="hero__cta reveal" style="--d:3">
+            <a href="#daftar" class="btn btn--primary" data-scroll data-join>
+              <span>Daftar Sekarang</span>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h12M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a href="team.html" class="btn btn--ghost"><span>Lihat Team</span></a>
+          </div>
+          <ul class="hero__meta reveal" style="--d:4">
+            <li><b data-stat="members">0</b><span>Member aktif</span></li>
+            <li><b data-stat="gens">0</b><span>Angkatan</span></li>
+            <li><b data-count="24" data-suffix="/7">0</b><span>Open member</span></li>
+          </ul>
+        </div>
+
+        <div class="hero__visual reveal" style="--d:2">
+          <div class="gcard gcard--ring hero__main tilt">
+            <span class="hero__chip">Kessoku Family</span>
+            <h3>Kessoku Family</h3>
+            <p>Rumah kreator, editor, dan pecinta anime.</p>
+            <div class="hero__tags">
+              <span class="tag">#kessokufamily</span>
+              <span class="tag">#kessokuclan</span>
+              <span class="tag">#ksf</span>
+            </div>
+            <div class="hero__bar" id="heroGens"></div>
+          </div>
+
+          <div class="float-card float-card--a"><b data-stat="members">0</b>+<small>Members</small></div>
+          <div class="float-card float-card--b">Open<small>Member</small></div>
+          <div class="float-card float-card--c"><b data-stat="gens">0</b><small>Gen</small></div>
+        </div>
+      </div>
+
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee__track" id="marqueeTrack"></div>
+      </div>
+    </section>
+
+    <!-- BENTO / TENTANG -->
+    <section class="section section--alt" id="tentang">
+      <div class="container">
+        <header class="section__head reveal">
+          <span class="eyebrow">Tentang Kami</span>
+          <h2 class="section__title">Komunitas yang <span class="gradient-text">Tumbuh Bareng</span></h2>
+          <p class="section__sub">Isinya editor, content creator, reviewer, dan pecinta anime. Fokusnya sederhana: aktif, saling support, dan solid.</p>
+        </header>
+
+        <div class="bento">
+          <article class="gcard gcard--ring span-7 reveal" style="--d:0">
+            <h3>Kenapa harus Kessoku Family?</h3>
+            <p>Kami bukan cuma kumpulan nama — tapi tempat kamu berkembang, dapat feedback, dan punya circle yang bikin betah.</p>
+            <div class="gen-row" id="bentoGens" style="margin-top:22px"></div>
+          </article>
+
+          <article class="gcard span-5 reveal" style="--d:1">
+            <div class="feat__icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a4.5 4.5 0 0 1 9-3 4.5 4.5 0 0 1 9 3c-2 4.5-9 9-9 9Z"/></svg></div>
+            <h3>Solid &amp; Supportif</h3>
+            <p>Anggota saling bantu, dari editing sampai cara naikin reach konten kamu.</p>
+          </article>
+
+          <article class="gcard span-4 reveal" style="--d:0">
+            <div class="feat__icon"><svg viewBox="0 0 24 24"><path d="M5 4h14v12H8l-3 3V4Z"/></svg></div>
+            <h3>Event &amp; Mabar</h3>
+            <p>Kegiatan rutin biar komunitas tetap hidup dan seru.</p>
+          </article>
+
+          <article class="gcard span-4 reveal" style="--d:1">
+            <div class="feat__icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H4zM9 20h6M12 16v4"/></svg></div>
+            <h3>Kolaborasi &amp; Live</h3>
+            <p>Collab antar member dan sesi live bareng admin.</p>
+          </article>
+
+          <article class="gcard span-4 reveal" style="--d:2">
+            <div class="feat__icon"><svg viewBox="0 0 24 24"><path d="M12 2 15 9l7 .5-5.5 4.5L18 21l-6-3.5L6 21l1.5-7L2 9.5 9 9z"/></svg></div>
+            <h3>Tumbuh Bersama</h3>
+            <p>Naik level bareng, dari newbie jadi creator jago.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATISTIK KOMUNITAS (real-time) -->
+    <section class="section" id="statistik">
+      <div class="container">
+        <header class="section__head reveal">
+          <span class="eyebrow">Statistik Live</span>
+          <h2 class="section__title">Komunitas dalam <span class="gradient-text">Angka</span></h2>
+          <p class="section__sub">Jumlah member dan pemakaian hashtag Kessoku Family di TikTok. Diperbarui otomatis lewat bot/API.</p>
+        </header>
+
+        <div class="stat-hero">
+          <article class="gcard gcard--ring stat-big reveal">
+            <span class="stat-big__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M16 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7.5" r="3.5"/><path d="M17 11h5M17 15h5M17 7h5"/></svg>
+            </span>
+            <b class="stat-num" data-stat="members">0</b>
+            <span class="stat-cap">Total Member Komunitas</span>
+            <span class="live" id="liveBadge"><span class="dot"></span> Live update</span>
+          </article>
+
+          <div class="stat-mini">
+            <article class="gcard stat-card reveal" style="--d:1">
+              <b class="stat-num" data-stat="gens">0</b>
+              <span class="stat-cap">Generasi</span>
+            </article>
+            <article class="gcard stat-card reveal" style="--d:2">
+              <b class="stat-num" data-stat="tags">0</b>
+              <span class="stat-cap">Hashtag dipantau</span>
+            </article>
+          </div>
+        </div>
+
+        <h3 class="stat-sub reveal">Pemakaian Hashtag di TikTok</h3>
+        <div class="tag-stats" id="tagStats"></div>
+
+        <h3 class="stat-sub reveal">Member per Generasi</h3>
+        <div class="gen-stats" id="genStats"></div>
+
+        <p class="stat-foot" id="statFoot"></p>
+      </div>
+    </section>
+
+    <!-- FORM REGISTRASI -->
+    <section class="section" id="daftar">
+      <div class="container">
+        <header class="section__head reveal">
+          <span class="eyebrow">Registrasi</span>
+          <h2 class="section__title">Formulir <span class="gradient-text">Pendaftaran</span></h2>
+          <p class="section__sub">Isi data di bawah untuk mengajukan diri jadi bagian dari Kessoku Family. Admin akan mereview pengajuanmu.</p>
+        </header>
+
+        <div class="form-wrap">
+          <form class="form gcard reveal" id="regForm" novalidate>
+            <div class="field">
+              <input type="text" id="nama" placeholder=" " required /><label for="nama">Nama Panggilan</label><span class="field__line"></span>
+            </div>
+            <div class="field">
+              <input type="text" id="tt" placeholder=" " required /><label for="tt">Username TikTok / Discord</label><span class="field__line"></span>
+            </div>
+            <div class="field">
+              <input type="email" id="email" placeholder=" " required /><label for="email">Email Aktif</label><span class="field__line"></span>
+            </div>
+            <div class="field">
+              <select id="gen" required></select>
+              <label for="gen" class="label--static">Pilih Gen</label><span class="field__line"></span>
+            </div>
+            <div class="field field--full">
+              <textarea id="alasan" rows="4" placeholder=" " required></textarea><label for="alasan">Alasan ingin bergabung</label><span class="field__line"></span>
+            </div>
+            <label class="check field--full">
+              <input type="checkbox" id="setuju" required /><span class="check__box" aria-hidden="true"></span>
+              <span class="check__text">Saya setuju mengikuti aturan &amp; aktif di komunitas.</span>
+            </label>
+            <div class="field--full">
+              <button type="submit" class="btn btn--primary btn--block" id="submitBtn"><span>Kirim Registrasi</span></button>
+              <p class="form__note">Data hanya dipakai untuk proses seleksi member.</p>
+            </div>
+          </form>
+
+          <aside class="panel gcard reveal" style="--d:1">
+            <div class="panel__row"><span>Status</span><b class="ok"><span class="badge__dot"></span> Dibuka</b></div>
+            <div class="panel__row"><span>Kuota GenV3</span><b>Segera</b></div>
+            <div class="panel__row"><span>Review</span><b>1×24 jam</b></div>
+            <div class="panel__row"><span>Total member</span><b data-stat="members">0</b></div>
+            <div class="panel__steps">
+              <div class="step is-done"><i>1</i><span>Isi formulir</span></div>
+              <div class="step"><i>2</i><span>Review admin</span></div>
+              <div class="step"><i>3</i><span>Wawancara singkat</span></div>
+              <div class="step"><i>4</i><span>Resmi jadi member</span></div>
+              <div class="step"><i>5</i><span>Bikin CN &amp; gabung grup</span></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <span class="brand__mark">KF</span>
+        <span><b>Kessoku Family</b><small>Satu marga, satu support.</small></span>
+      </div>
+      <nav class="footer__links">
+        <a href="index.html">Home</a><a href="team.html">Team</a><a href="admin.html">Admin</a>
+      </nav>
+      <p class="footer__copy">© <span id="year"></span> Kessoku Family — #kessokufamily #kessokuclan #ksf</p>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="toast__icon" aria-hidden="true">✓</span>
+    <div class="toast__body"><b>Registrasi terkirim!</b><span>Pengajuanmu sedang direview admin.</span></div>
+  </div>
+  <button class="to-top" id="toTop" aria-label="Kembali ke atas">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
+  <script src="config.js"></script>
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
