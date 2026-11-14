@@ -137,6 +137,33 @@
             <div class="account-list" id="accountList"></div>
           </article>
 
+          <!-- Kelola Admin & Team (tampil di halaman Team) — owner & admin -->
+          <article class="gcard accounts-card reveal" id="teamCard">
+            <div class="accounts-card__head">
+              <h3>Kelola Admin &amp; Team</h3>
+              <p>Tambah, hapus, atau ubah <b>keterangan</b> orang yang tampil di halaman <b>Team</b> — mis. <i>Admin Live</i>, <i>Admin Bot</i>, <i>Leader Admin</i>. Ubah jabatan langsung di kolomnya, perubahan tampil real-time di halaman Team.</p>
+            </div>
+            <form class="add-admin add-team" id="addTeamForm">
+              <div class="field">
+                <input id="teamName" placeholder=" " required>
+                <label for="teamName">Nama</label><span class="field__line"></span>
+              </div>
+              <div class="field">
+                <input id="teamRole" placeholder=" " required>
+                <label for="teamRole">Keterangan (mis. Admin Live)</label><span class="field__line"></span>
+              </div>
+              <div class="field">
+                <select id="teamSection">
+                  <option value="members">Admin / Staff (grid)</option>
+                  <option value="founders">Pendiri (kartu besar)</option>
+                </select>
+                <label for="teamSection">Bagian</label><span class="field__line"></span>
+              </div>
+              <button type="submit" class="btn btn--primary"><span>+ Tambah Team</span></button>
+            </form>
+            <div class="team-admin-list" id="teamAdminList"></div>
+          </article>
+
           <!-- Kelola Total Member (manual) — owner & admin -->
           <article class="gcard accounts-card reveal" id="totalCard">
             <div class="accounts-card__head">

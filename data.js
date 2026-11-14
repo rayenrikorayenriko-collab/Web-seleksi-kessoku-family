@@ -31,13 +31,16 @@ window.KSF = (function () {
   // Akun owner utama (bawaan)
   const OWNER = { id: 'owner', name: 'RAYENRIKO', username: 'RAYENRIKO', password: 'RAYENRIKO1', role: 'owner' };
 
-  const founders = [
+  const TEAM_KEY = 'ksf_team_v1';
+
+  // Data team bawaan (bisa diubah/dihapus lewat Setting)
+  const DEFAULT_FOUNDERS = [
     { id: 'nino',  name: 'Nino',  role: 'Leader Admin', note: 'Leader Admin Kessoku Family.', tier: 'lead' },
     { id: 'ridhz', name: 'RIDHZ', role: 'Owner',        note: 'Pemegang kekuasaan tertinggi Kessoku Family.', tier: 'owner' },
     { id: 'zell',  name: 'Zell',  role: 'Co-owner',     note: 'Co-owner Kessoku Family.', tier: 'lead' }
   ];
 
-  const members = [
+  const DEFAULT_MEMBERS = [
     { id: 'zenn',   name: 'Zenn',   role: 'Sesepuh ML' },
     { id: 'xyzoo',  name: 'Xyzoo',  role: 'Admin Website' },
     { id: 'reyy',   name: 'Reyy',   role: 'Admin Bot' },
@@ -52,7 +55,60 @@ window.KSF = (function () {
     { id: 'jelz',   name: 'Jelz',   role: 'Live' }
   ];
 
-  const all = () => founders.concat(members);
+  const cloneFounders = () => DEFAULT_FOUNDERS.map(f => Object.assign({}, f));
+  const cloneMembers = () => DEFAULT_MEMBERS.map(m => Object.assign({}, m));
+
+  function getTeam() {
+    let raw = null;
+    try { raw = localStorage.getItem(TEAM_KEY); } catch (e) { /* abaikan */ }
+    if (raw !== null) {
+      try {
+        const v = JSON.parse(raw);
+        if (v && typeof v === 'object') {
+          return {
+            founders: Array.isArray(v.founders) ? v.founders : cloneFounders(),
+            members: Array.isArray(v.members) ? v.members : cloneMembers()
+          };
+        }
+      } catch (e) { /* abaikan */ }
+    }
+    return { founders: cloneFounders(), members: cloneMembers() };
+  }
+  function saveTeam(t) { try { localStorage.setItem(TEAM_KEY, JSON.stringify(t)); } catch (e) { /* abaikan */ } }
+  function getFounders() { return getTeam().founders; }
+  function getMembers() { return getTeam().members; }
+  function all() { const t = getTeam(); return t.founders.concat(t.members); }
+
+  // ---- Manajemen Team (tambah / hapus / ubah keterangan) ----
+  function addTeamMember(item) {
+    const t = getTeam();
+    const group = item.group === 'founders' ? 'founders' : 'members';
+    const base = {
+      id: item.id || ('tm_' + Date.now().toString(36)),
+      name: String(item.name || '').trim(),
+      role: String(item.role || '').trim() || 'Admin'
+    };
+    if (group === 'founders') {
+      t.founders.push(Object.assign({ tier: item.tier || 'lead', note: item.note || (base.role + ' Kessoku Family.') }, base));
+    } else {
+      t.members.push(base);
+    }
+    saveTeam(t); return t;
+  }
+  function removeTeamMember(id) {
+    const t = getTeam();
+    t.founders = t.founders.filter(x => x.id !== id);
+    t.members = t.members.filter(x => x.id !== id);
+    saveTeam(t); return t;
+  }
+  function updateTeamMember(id, patch) {
+    const t = getTeam();
+    const apply = (x) => x.id === id ? Object.assign({}, x, patch) : x;
+    t.founders = t.founders.map(apply);
+    t.members = t.members.map(apply);
+    saveTeam(t); return t;
+  }
+  function resetTeam() { try { localStorage.removeItem(TEAM_KEY); } catch (e) { /* abaikan */ } return getTeam(); }
 
   function getPhotos() {
     try { return JSON.parse(localStorage.getItem(KEY)) || {}; }
@@ -339,7 +395,8 @@ window.KSF = (function () {
   }
 
   return {
-    founders, members, all,
+    getTeam, getFounders, getMembers, all,
+    addTeamMember, removeTeamMember, updateTeamMember, resetTeam,
     getPhotos, photoOf, setPhoto, removePhoto, avatarHTML,
     logo, setLogo, removeLogo,
     getGenerations, addGeneration, updateGeneration, removeGeneration,
@@ -348,6 +405,6 @@ window.KSF = (function () {
     totalMembers, localStats, getTotalOverride, setTotalOverride, clearTotalOverride,
     apiConfigured, apiGet, apiSend, refreshStats, isSupabase, pushTotal, clearRemoteTotal,
     getAdmins, addAdmin, removeAdmin, accounts, login, logout, currentUser, isOwner, OWNER,
-    KEY, LOGO_KEY, ADMINS_KEY, SESSION_KEY, GEN_KEY, TAG_KEY, STATS_KEY, CN_KEY, TOTAL_KEY
+    KEY, LOGO_KEY, ADMINS_KEY, SESSION_KEY, GEN_KEY, TAG_KEY, STATS_KEY, CN_KEY, TOTAL_KEY, TEAM_KEY
   };
 })();

@@ -280,26 +280,36 @@
   }
 
   /* ---------- Render: Team page ---------- */
-  const foundersWrap = $('#founders');
-  if (foundersWrap && KSF.founders) {
-    foundersWrap.innerHTML = KSF.founders.map((f, i) => `
+  function renderTeamPage() {
+    const foundersWrap = $('#founders');
+    if (foundersWrap && KSF.getFounders) {
+      const fs = KSF.getFounders();
+      foundersWrap.innerHTML = fs.length ? fs.map((f, i) => `
       <article class="profile ${f.tier === 'owner' ? 'profile--owner' : ''} reveal" style="--d:${i}">
         ${f.tier === 'owner' ? '<span class="profile__badge">Owner</span>' : ''}
         ${KSF.avatarHTML(f, f.tier === 'owner' ? 'avatar--owner' : '')}
-        <span class="person__role">${f.role}</span>
-        <h3>${f.name}</h3>
-        <p>${f.note}</p>
-      </article>`).join('');
-  }
+        <span class="person__role">${esc(f.role)}</span>
+        <h3>${esc(f.name)}</h3>
+        <p>${esc(f.note || '')}</p>
+      </article>`).join('') : '<p class="cn-empty">Belum ada pendiri.</p>';
+    }
 
-  const teamGrid = $('#teamGrid');
-  if (teamGrid && KSF.members) {
-    teamGrid.innerHTML = KSF.members.map((m, i) => `
+    const teamGrid = $('#teamGrid');
+    if (teamGrid && KSF.getMembers) {
+      const ms = KSF.getMembers();
+      teamGrid.innerHTML = ms.length ? ms.map((m, i) => `
       <article class="mcard reveal" style="--d:${i % 6}">
         ${KSF.avatarHTML(m)}
-        <b>${m.name}</b>
-        <span>${m.role}</span>
-      </article>`).join('');
+        <b>${esc(m.name)}</b>
+        <span>${esc(m.role)}</span>
+      </article>`).join('') : '<p class="cn-empty">Belum ada admin. Tambahkan lewat halaman Admin.</p>';
+    }
+    initReveal();
+  }
+  if ($('#founders') || $('#teamGrid')) {
+    renderTeamPage();
+    // Real-time: perubahan team di tab lain langsung tampil
+    window.addEventListener('storage', (e) => { if (e.key === KSF.TEAM_KEY) renderTeamPage(); });
   }
 
   /* ---------- Render: Admin page ---------- */
@@ -565,6 +575,7 @@
         renderGens();
         renderTags();
         renderTotal();
+        renderTeamAdmin();
         if (owner) { renderAccounts(); loadApiFields(); startStatsPoll(); }
       } else {
         loginGate.hidden = false;
@@ -653,7 +664,64 @@
       showToast('Akun dibuat', `${name} ditambahkan sebagai ${ROLE_LABEL[role] || 'Admin'}.`);
     });
 
-    /* ---- Handler: generasi ---- */
+    /* ---- Kelola team (admin/keterangan yang tampil di halaman Team) ---- */
+    function renderTeamAdmin() {
+      const list = $('#teamAdminList');
+      if (!list || !KSF.getTeam) return;
+      const t = KSF.getTeam();
+      const row = (m, group, i) => `
+        <div class="teamrow" style="--d:${i % 8}" data-id="${esc(m.id)}">
+          <span class="teamrow__avatar">${esc((m.name || '?').trim().charAt(0).toUpperCase())}</span>
+          <span class="teamrow__info"><b>${esc(m.name)}</b><small>${group === 'founders' ? 'Pendiri' : 'Admin / Staff'}</small></span>
+          <input class="teamrow__role" data-role value="${esc(m.role || '')}" placeholder="Keterangan (mis. Admin Live)" aria-label="Keterangan ${esc(m.name)}">
+          <button class="icon-btn icon-btn--danger" type="button" data-team-del="${esc(m.id)}" aria-label="Hapus ${esc(m.name)}">
+            <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg> Hapus
+          </button>
+        </div>`;
+      let html = '';
+      if (t.founders.length) html += '<p class="account-group"><span>Pendiri</span></p>' + t.founders.map((m, i) => row(m, 'founders', i)).join('');
+      if (t.members.length) html += '<p class="account-group"><span>Admin &amp; Staff</span></p>' + t.members.map((m, i) => row(m, 'members', i)).join('');
+      list.innerHTML = html || '<p class="cn-empty">Belum ada anggota team. Tambahkan lewat form di atas.</p>';
+    }
+
+    const teamAdminList = $('#teamAdminList');
+    if (teamAdminList) {
+      // Ubah keterangan (jabatan) langsung
+      teamAdminList.addEventListener('change', (e) => {
+        const inp = e.target.closest('.teamrow__role'); if (!inp) return;
+        const rowEl = inp.closest('.teamrow');
+        const nameEl = rowEl && rowEl.querySelector('.teamrow__info b');
+        const val = inp.value.trim() || 'Admin';
+        KSF.updateTeamMember(rowEl.dataset.id, { role: val });
+        showToast('Keterangan diperbarui', `${nameEl ? nameEl.textContent : ''} → ${val}.`);
+      });
+      // Hapus anggota team
+      teamAdminList.addEventListener('click', (e) => {
+        const del = e.target.closest('[data-team-del]'); if (!del) return;
+        const rowEl = del.closest('.teamrow');
+        const nameEl = rowEl && rowEl.querySelector('.teamrow__info b');
+        if (!window.confirm('Hapus ' + (nameEl ? nameEl.textContent : 'anggota ini') + ' dari halaman Team?')) return;
+        KSF.removeTeamMember(del.dataset.teamDel);
+        del.dataset.teamDel = '';
+        renderTeamAdmin();
+        showToast('Dihapus', `${nameEl ? nameEl.textContent : 'Anggota'} dihapus dari Team.`);
+      });
+    }
+
+    const addTeamForm = $('#addTeamForm');
+    if (addTeamForm) addTeamForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!(KSF.addTeamMember)) return;
+      const name = $('#teamName').value.trim();
+      const role = $('#teamRole').value.trim();
+      const section = ($('#teamSection') && $('#teamSection').value) || 'members';
+      if (!name) { showToast('Belum lengkap', 'Isi nama anggota dulu.'); return; }
+      KSF.addTeamMember({ name, role: role || 'Admin', group: section });
+      addTeamForm.reset();
+      renderTeamAdmin();
+      showToast('Ditambahkan', `${name} sekarang tampil di halaman Team.`);
+    });
+
     const genList = $('#genList');
     if (genList) {
       genList.addEventListener('change', (e) => {

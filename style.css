@@ -784,6 +784,39 @@ body[data-page="admin"] .dock__pill { opacity: 0; }
 /* Baris konfigurasi API/Supabase */
 .add-admin--api { grid-template-columns: 2fr 2fr 1fr auto auto; }
 
+/* Kelola team (halaman Team) */
+.add-team { grid-template-columns: 1.1fr 1.4fr 1.2fr auto; }
+.team-admin-list { display: grid; gap: 12px; }
+.teamrow {
+  display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: var(--radius-sm);
+  background: rgba(255,255,255,.035); box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow .3s, transform .3s var(--ease);
+  animation: accIn .5s var(--ease) both; animation-delay: calc(var(--d, 0) * 55ms);
+}
+.teamrow:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1px rgba(255,43,61,.35); }
+.teamrow__avatar {
+  width: 40px; height: 40px; flex: none; border-radius: 12px; display: grid; place-items: center;
+  font-family: 'Space Grotesk', sans-serif; font-size: 1.05rem; font-weight: 700; color: #fff;
+  background: linear-gradient(150deg, var(--red-500), var(--red-700));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.16);
+}
+.teamrow__info { flex: 1; min-width: 0; }
+.teamrow__info b { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 1rem; }
+.teamrow__info small { color: var(--muted); font-size: .74rem; }
+.teamrow__role {
+  flex: none; width: 240px; max-width: 46%; padding: 10px 13px; border-radius: 10px; border: 0;
+  font-family: 'Space Grotesk', sans-serif; font-size: .92rem; color: #fff;
+  background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 1px var(--line); outline: none;
+  transition: box-shadow .3s, transform .3s var(--ease);
+}
+.teamrow__role::placeholder { color: var(--muted); }
+.teamrow__role:focus { box-shadow: inset 0 0 0 1px rgba(255,43,61,.6); transform: translateY(-1px); }
+@media (max-width: 720px) {
+  .teamrow { flex-wrap: wrap; }
+  .teamrow__role { width: 100%; max-width: none; order: 3; }
+  .teamrow .icon-btn--danger { order: 4; margin-left: auto; }
+}
+
 /* Input jumlah hashtag (isi manual) */
 .tagrow-admin__num {
   flex: none; width: 134px; padding: 9px 12px; border-radius: 10px; border: 0;
