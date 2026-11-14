@@ -15,6 +15,9 @@ window.KSF = (function () {
   const STATS_KEY = 'ksf_stats_cache_v1';
   const CN_KEY = 'ksf_cns_v1';
   const TOTAL_KEY = 'ksf_total_v1';
+  const GEN_PHOTO_KEY = 'ksf_gen_photos_v1';
+  const CUSTOM_LINKS_KEY = 'ksf_custom_links_v1';
+  const CUSTOM_LINK_PHOTO_KEY = 'ksf_custom_link_photos_v1';
 
   // Data bawaan (dipakai sampai database/API kamu tersambung)
   const DEFAULT_GENS = [
@@ -35,9 +38,9 @@ window.KSF = (function () {
 
   // Data team bawaan (bisa diubah/dihapus lewat Setting)
   const DEFAULT_FOUNDERS = [
-    { id: 'nino',  name: 'Nino',  role: 'Leader Admin', note: 'Leader Admin Kessoku Family.', tier: 'lead' },
-    { id: 'ridhz', name: 'RIDHZ', role: 'Owner',        note: 'Pemegang kekuasaan tertinggi Kessoku Family.', tier: 'owner' },
-    { id: 'zell',  name: 'Zell',  role: 'Co-owner',     note: 'Co-owner Kessoku Family.', tier: 'lead' }
+    { id: 'nino',  name: 'Nino',  role: 'Leader Admin', note: 'Mengatur koordinasi tim dan menjaga komunikasi antaranggota tetap lancar.', tier: 'lead' },
+    { id: 'ridhz', name: 'RIDHZ', role: 'Owner',        note: 'Mengembangkan arah Kessoku Family dan membuka ruang kolaborasi untuk para kreator.', tier: 'owner' },
+    { id: 'zell',  name: 'Zell',  role: 'Co-owner',     note: 'Mendampingi pengelolaan komunitas dan membantu setiap program berjalan konsisten.', tier: 'lead' }
   ];
 
   const DEFAULT_MEMBERS = [
@@ -65,8 +68,15 @@ window.KSF = (function () {
       try {
         const v = JSON.parse(raw);
         if (v && typeof v === 'object') {
+          const noteUpdates = {
+            'Leader Admin Kessoku Family.': 'Mengatur koordinasi tim dan menjaga komunikasi antaranggota tetap lancar.',
+            'Pemegang kekuasaan tertinggi Kessoku Family.': 'Mengembangkan arah Kessoku Family dan membuka ruang kolaborasi untuk para kreator.',
+            'Co-owner Kessoku Family.': 'Mendampingi pengelolaan komunitas dan membantu setiap program berjalan konsisten.'
+          };
           return {
-            founders: Array.isArray(v.founders) ? v.founders : cloneFounders(),
+            founders: Array.isArray(v.founders)
+              ? v.founders.map(f => Object.assign({}, f, { note: noteUpdates[f.note] || f.note }))
+              : cloneFounders(),
             members: Array.isArray(v.members) ? v.members : cloneMembers()
           };
         }
@@ -89,7 +99,10 @@ window.KSF = (function () {
       role: String(item.role || '').trim() || 'Admin'
     };
     if (group === 'founders') {
-      t.founders.push(Object.assign({ tier: item.tier || 'lead', note: item.note || (base.role + ' Kessoku Family.') }, base));
+      t.founders.push(Object.assign({
+        tier: item.tier || 'lead',
+        note: item.note || 'Mendorong kolaborasi dan pengembangan karya di Kessoku Family.'
+      }, base));
     } else {
       t.members.push(base);
     }
@@ -145,6 +158,73 @@ window.KSF = (function () {
   function removeGeneration(id) {
     const l = getGenerations().filter(x => x.id !== id);
     saveGenerations(l); return l;
+  }
+
+  // Foto gen disimpan lokal pada browser yang mengelola halaman.
+  function getGenPhotos() {
+    try { return JSON.parse(localStorage.getItem(GEN_PHOTO_KEY)) || {}; }
+    catch (e) { return {}; }
+  }
+  function genPhoto(id) { return getGenPhotos()[id] || ''; }
+  function setGenPhoto(id, dataUrl) {
+    const photos = getGenPhotos(); photos[id] = dataUrl;
+    localStorage.setItem(GEN_PHOTO_KEY, JSON.stringify(photos));
+  }
+  function removeGenPhoto(id) {
+    const photos = getGenPhotos(); delete photos[id];
+    localStorage.setItem(GEN_PHOTO_KEY, JSON.stringify(photos));
+  }
+  function getCustomLinkPhotos() {
+    try { return JSON.parse(localStorage.getItem(CUSTOM_LINK_PHOTO_KEY)) || {}; }
+    catch (e) { return {}; }
+  }
+  function customLinkPhoto(id) { return getCustomLinkPhotos()[id] || ''; }
+  function setCustomLinkPhoto(id, dataUrl) {
+    const photos = getCustomLinkPhotos(); photos[id] = dataUrl;
+    localStorage.setItem(CUSTOM_LINK_PHOTO_KEY, JSON.stringify(photos));
+  }
+  function removeCustomLinkPhoto(id) {
+    const photos = getCustomLinkPhotos(); delete photos[id];
+    localStorage.setItem(CUSTOM_LINK_PHOTO_KEY, JSON.stringify(photos));
+  }
+
+  // Bar tautan komunitas yang dapat diberi foto dan tujuan URL.
+  function getCustomLinks() {
+    try {
+      const links = JSON.parse(localStorage.getItem(CUSTOM_LINKS_KEY));
+      return Array.isArray(links) ? links : [];
+    } catch (e) { return []; }
+  }
+  function saveCustomLinks(links) { localStorage.setItem(CUSTOM_LINKS_KEY, JSON.stringify(links)); }
+  function addCustomLink(link) {
+    const links = getCustomLinks();
+    links.push({
+      id: link.id || ('link_' + Date.now().toString(36)),
+      title: String(link.title || '').trim(),
+      url: String(link.url || '').trim()
+    });
+    saveCustomLinks(links); return links;
+  }
+  function updateCustomLink(id, patch) {
+    const links = getCustomLinks().map(x => x.id === id ? Object.assign({}, x, patch) : x);
+    saveCustomLinks(links); return links;
+  }
+  function removeCustomLink(id) {
+    const links = getCustomLinks().filter(x => x.id !== id);
+    saveCustomLinks(links);
+    removeCustomLinkPhoto(id);
+    return links;
+  }
+
+  async function pushSetting(key, value) {
+    if (!apiConfigured() || !isSupabase()) return null;
+    const r = await fetch(window.KSF_CONFIG.base() + '/app_settings', {
+      method: 'POST',
+      headers: Object.assign(apiHeaders(true), { Prefer: 'resolution=merge-duplicates,return=representation' }),
+      body: JSON.stringify({ key, value })
+    });
+    if (!r.ok) throw new Error('http ' + r.status);
+    try { return await r.json(); } catch (e) { return null; }
   }
 
   // ---- Hashtag TikTok ----
@@ -320,12 +400,23 @@ window.KSF = (function () {
       saveHashtags(hashtags);
       let total = generations.filter(g => g.active).reduce((s, g) => s + g.members, 0);
       try {
-        const rows = await apiGet('/app_settings?select=key,value&key=eq.total_members');
-        const row = rows && rows[0];
-        if (row && row.value != null && Number.isFinite(Number(row.value))) {
-          total = Number(row.value);
-        }
-      } catch (e) { /* tabel app_settings opsional */ }
+        const rows = await apiGet('/app_settings?select=key,value');
+        (Array.isArray(rows) ? rows : []).forEach(row => {
+          if (row.key === 'total_members' && row.value != null && Number.isFinite(Number(row.value))) {
+            total = Number(row.value);
+          } else if (row.key === 'generation_photos' && row.value && typeof row.value === 'object') {
+            localStorage.setItem(GEN_PHOTO_KEY, JSON.stringify(row.value));
+          } else if (row.key === 'custom_links' && Array.isArray(row.value)) {
+            localStorage.setItem(CUSTOM_LINKS_KEY, JSON.stringify(row.value));
+          } else if (row.key === 'custom_link_photos' && row.value && typeof row.value === 'object') {
+            localStorage.setItem(CUSTOM_LINK_PHOTO_KEY, JSON.stringify(row.value));
+          } else if (row.key === 'team_data' && row.value && typeof row.value === 'object') {
+            localStorage.setItem(TEAM_KEY, JSON.stringify(row.value));
+          } else if (row.key === 'team_photos' && row.value && typeof row.value === 'object') {
+            localStorage.setItem(KEY, JSON.stringify(row.value));
+          }
+        });
+      } catch (e) { /* pengaturan tambahan bersifat opsional */ }
       localStorage.setItem(STATS_KEY, JSON.stringify({ totalMembers: total, at: Date.now() }));
       return { generations, hashtags, totalMembers: total };
     }
@@ -341,14 +432,23 @@ window.KSF = (function () {
   // ---- Manajemen CN (bar CN di halaman daftar) ----
   // Kata kunci `name` pada template akan diganti nama pendaftar secara otomatis.
   const DEFAULT_CNS = [
-    { id: 'cn1', tpl: 'name 𝖋𝖙`𝙆𝙎𝙁᭄' },
-    { id: 'cn2', tpl: 'name〆`𝙆𝙎𝙁' },
-    { id: 'cn3', tpl: 'ケ-name' }
+    { id: 'cn1', tpl: '{{name}} | KSF' },
+    { id: 'cn2', tpl: '{{name}} 〆 KSF' },
+    { id: 'cn3', tpl: 'KSF • {{name}}' }
   ];
   function getCNs() {
     const raw = localStorage.getItem(CN_KEY);
     if (raw === null) return DEFAULT_CNS.map(c => ({ ...c }));
-    try { const v = JSON.parse(raw); return Array.isArray(v) ? v : DEFAULT_CNS.map(c => ({ ...c })); }
+    try {
+      const v = JSON.parse(raw);
+      if (!Array.isArray(v)) return DEFAULT_CNS.map(c => ({ ...c }));
+      const legacy = {
+        'name 𝖋𝖙`𝙆𝙎𝙁᭄': DEFAULT_CNS[0].tpl,
+        'name〆`𝙆𝙎𝙁': DEFAULT_CNS[1].tpl,
+        'ケ-name': DEFAULT_CNS[2].tpl
+      };
+      return v.map(c => Object.assign({}, c, { tpl: legacy[c.tpl] || c.tpl }));
+    }
     catch (e) { return DEFAULT_CNS.map(c => ({ ...c })); }
   }
   function saveCNs(list) { localStorage.setItem(CN_KEY, JSON.stringify(list)); }
@@ -400,11 +500,15 @@ window.KSF = (function () {
     getPhotos, photoOf, setPhoto, removePhoto, avatarHTML,
     logo, setLogo, removeLogo,
     getGenerations, addGeneration, updateGeneration, removeGeneration,
+    getGenPhotos, genPhoto, setGenPhoto, removeGenPhoto,
+    getCustomLinkPhotos, customLinkPhoto, setCustomLinkPhoto, removeCustomLinkPhoto,
+    getCustomLinks, addCustomLink, updateCustomLink, removeCustomLink,
     getHashtags, addHashtag, removeHashtag, updateHashtag,
     getCNs, addCN, removeCN, DEFAULT_CNS,
     totalMembers, localStats, getTotalOverride, setTotalOverride, clearTotalOverride,
-    apiConfigured, apiGet, apiSend, refreshStats, isSupabase, pushTotal, clearRemoteTotal,
+    apiConfigured, apiGet, apiSend, refreshStats, isSupabase, pushTotal, clearRemoteTotal, pushSetting,
     getAdmins, addAdmin, removeAdmin, accounts, login, logout, currentUser, isOwner, OWNER,
-    KEY, LOGO_KEY, ADMINS_KEY, SESSION_KEY, GEN_KEY, TAG_KEY, STATS_KEY, CN_KEY, TOTAL_KEY, TEAM_KEY
+    KEY, LOGO_KEY, ADMINS_KEY, SESSION_KEY, GEN_KEY, TAG_KEY, STATS_KEY, CN_KEY, TOTAL_KEY, TEAM_KEY,
+    GEN_PHOTO_KEY, CUSTOM_LINKS_KEY, CUSTOM_LINK_PHOTO_KEY
   };
 })();

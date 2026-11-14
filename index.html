@@ -49,8 +49,8 @@
           <span class="badge reveal" style="--d:0"><span class="badge__dot"></span> Komunitas Kreator &amp; Editor Anime</span>
           <h1 class="hero__title reveal" style="--d:1">Satu Marga,<br /><span class="gradient-text">Satu Support.</span></h1>
           <p class="hero__desc reveal" style="--d:2">
-            <b>Kessoku Family</b> adalah rumah buat kreator, editor, dan pecinta anime yang saling support.
-            Daftarkan dirimu, temukan teman baru, dan tumbuh bareng di komunitas yang solid.
+            <b>Kessoku Family</b> menghubungkan kreator, editor, dan penggemar anime untuk berbagi karya serta berkolaborasi.
+            Kenalan, bertukar ide, dan kembangkan proyek bersama komunitas.
           </p>
           <div class="hero__cta reveal" style="--d:3">
             <a href="#daftar" class="btn btn--primary" data-scroll data-join>
@@ -70,7 +70,7 @@
           <div class="gcard gcard--ring hero__main tilt">
             <span class="hero__chip">Kessoku Family</span>
             <h3>Kessoku Family</h3>
-            <p>Rumah kreator, editor, dan pecinta anime.</p>
+            <p>Ruang kolaborasi kreator, editor, dan penggemar anime.</p>
             <div class="hero__tags">
               <span class="tag">#kessokufamily</span>
               <span class="tag">#kessokuclan</span>
@@ -96,20 +96,19 @@
         <header class="section__head reveal">
           <span class="eyebrow">Tentang Kami</span>
           <h2 class="section__title">Komunitas yang <span class="gradient-text">Tumbuh Bareng</span></h2>
-          <p class="section__sub">Isinya editor, content creator, reviewer, dan pecinta anime. Fokusnya sederhana: aktif, saling support, dan solid.</p>
+            <p class="section__sub">Kreator, editor, reviewer, dan penggemar anime bertemu untuk bertukar ide serta membuat karya bersama.</p>
         </header>
 
         <div class="bento">
           <article class="gcard gcard--ring span-7 reveal" style="--d:0">
             <h3>Kenapa harus Kessoku Family?</h3>
-            <p>Kami bukan cuma kumpulan nama — tapi tempat kamu berkembang, dapat feedback, dan punya circle yang bikin betah.</p>
-            <div class="gen-row" id="bentoGens" style="margin-top:22px"></div>
+            <p>Kolaborasi terbuka, masukan yang membangun, dan ruang untuk mengembangkan gaya kreatif masing-masing.</p>
           </article>
 
           <article class="gcard span-5 reveal" style="--d:1">
             <div class="feat__icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a4.5 4.5 0 0 1 9-3 4.5 4.5 0 0 1 9 3c-2 4.5-9 9-9 9Z"/></svg></div>
             <h3>Solid &amp; Supportif</h3>
-            <p>Anggota saling bantu, dari editing sampai cara naikin reach konten kamu.</p>
+            <p>Berbagi proses, bertukar masukan, dan saling mendukung saat mengembangkan konten.</p>
           </article>
 
           <article class="gcard span-4 reveal" style="--d:0">
@@ -127,29 +126,46 @@
           <article class="gcard span-4 reveal" style="--d:2">
             <div class="feat__icon"><svg viewBox="0 0 24 24"><path d="M12 2 15 9l7 .5-5.5 4.5L18 21l-6-3.5L6 21l1.5-7L2 9.5 9 9z"/></svg></div>
             <h3>Tumbuh Bersama</h3>
-            <p>Naik level bareng, dari newbie jadi creator jago.</p>
+            <p>Setiap anggota punya kesempatan untuk belajar, bereksperimen, dan meningkatkan kualitas karya.</p>
           </article>
         </div>
       </div>
     </section>
 
-    <!-- STATISTIK KOMUNITAS (real-time) -->
+    <!-- PREVIEW GENERASI -->
+    <section class="section gen-showcase" id="generasi">
+      <div class="container">
+        <header class="section__head reveal">
+          <span class="eyebrow">Perjalanan KSF</span>
+          <h2 class="section__title">Generasi <span class="gradient-text">Kessoku</span></h2>
+          <p class="section__sub">Kenali tiap angkatan, lihat jumlah anggotanya, dan temukan tautan grup yang sesuai.</p>
+        </header>
+        <div class="gen-preview-list" id="generationPreview"></div>
+        <div class="community-links" id="customLinksSection" hidden>
+          <h3 class="stat-sub">Kanal Resmi &amp; Tautan</h3>
+          <div class="custom-link-grid" id="customLinksGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATISTIK KOMUNITAS -->
     <section class="section" id="statistik">
       <div class="container">
         <header class="section__head reveal">
           <span class="eyebrow">Statistik Live</span>
           <h2 class="section__title">Komunitas dalam <span class="gradient-text">Angka</span></h2>
-          <p class="section__sub">Jumlah member dan pemakaian hashtag Kessoku Family di TikTok. Diperbarui otomatis lewat bot/API.</p>
+          <p class="section__sub">Ringkasan anggota dan pemakaian hashtag Kessoku Family. Rekap komunitas ditinjau setiap hari Senin.</p>
         </header>
 
         <div class="stat-hero">
           <article class="gcard gcard--ring stat-big reveal">
+            <span class="stat-big__brand" data-logo data-fallback="KF">KF</span>
             <span class="stat-big__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M16 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7.5" r="3.5"/><path d="M17 11h5M17 15h5M17 7h5"/></svg>
             </span>
             <b class="stat-num" data-stat="members">0</b>
             <span class="stat-cap">Total Member Komunitas</span>
-            <span class="live" id="liveBadge"><span class="dot"></span> Live update</span>
+            <span class="live" id="liveBadge"><span class="dot"></span> Rekap tiap Senin</span>
           </article>
 
           <div class="stat-mini">
@@ -233,7 +249,7 @@
     <div class="container footer__inner">
       <div class="footer__brand">
         <span class="brand__mark">KF</span>
-        <span><b>Kessoku Family</b><small>Satu marga, satu support.</small></span>
+        <span><b>Kessoku Family</b><small>Kreativitas bertemu kolaborasi.</small></span>
       </div>
       <nav class="footer__links">
         <a href="index.html">Home</a><a href="team.html">Team</a><a href="admin.html">Admin</a>

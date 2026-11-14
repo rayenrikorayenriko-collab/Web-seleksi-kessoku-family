@@ -20,8 +20,8 @@ window.KSF_CONFIG = (function () {
   'use strict';
 
   // ==== ISI DI SINI (opsional) ====
-  const DEFAULT_BASE = ''; // mis. https://abcdefgh.supabase.co/rest/v1
-  const DEFAULT_KEY  = ''; // mis. eyJhbGciOi... (anon public key)
+  const DEFAULT_BASE = 'https://visrptcqtakqqqkhybtp.supabase.co/rest/v1'; // Base REST Supabase
+  const DEFAULT_KEY  = 'sb_publishable_kJ4ZZUv3RIB1e3hHGASnMw_1UMYTgCf'; // anon/publishable key (aman dipublikasikan)
   // ================================
 
   const API_KEY = 'ksf_api_base_v1';   // penyimpanan base url (localStorage)
@@ -29,12 +29,21 @@ window.KSF_CONFIG = (function () {
   const REFRESH_KEY = 'ksf_refresh_ms_v1';
   const DEFAULT_REFRESH = 15000; // 15 detik
 
+  // Rapikan base url: buang garis miring di akhir, dan kalau ini URL Supabase
+  // tapi belum ada "/rest/v1", tambahkan otomatis (Project URL -> REST URL).
+  function normalize(u) {
+    u = (u || '').trim().replace(/\/+$/, '');
+    if (!u) return '';
+    if (/supabase\.(co|in)/i.test(u) && !/\/rest\/v1$/i.test(u)) u += '/rest/v1';
+    return u;
+  }
+
   function base() {
     const v = (localStorage.getItem(API_KEY) || '').trim();
-    return (v || DEFAULT_BASE).replace(/\/+$/, '');
+    return normalize(v || DEFAULT_BASE);
   }
   function setBase(url) {
-    localStorage.setItem(API_KEY, (url || '').trim().replace(/\/+$/, ''));
+    localStorage.setItem(API_KEY, normalize(url));
   }
   function key() {
     return (localStorage.getItem(KEY_NAME) || DEFAULT_KEY || '').trim();

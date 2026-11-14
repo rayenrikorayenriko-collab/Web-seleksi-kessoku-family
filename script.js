@@ -27,6 +27,17 @@
       { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
     ));
   }
+  function safeExternalUrl(raw) {
+    try {
+      const url = new URL(String(raw || '').trim());
+      return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : '';
+    } catch (e) { return ''; }
+  }
+  function verifiedBadge() {
+    return `<span class="verified-badge" role="img" aria-label="Tim Kessoku Family terverifikasi">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5.2 10.2 3.1 3.1 6.6-6.6"/></svg>
+    </span>`;
+  }
   // Ubah huruf/angka jadi "bold" unicode (Mathematical Sans-Serif Bold Italic)
   function toBold(str) {
     const UP = 0x1D63C, LO = 0x1D656, DG = 0x1D7EC;
@@ -63,6 +74,56 @@
         el.textContent = el.dataset.fallback || 'KF';
       }
     });
+  }
+
+  /* ---------- Tema warna global ---------- */
+  function initThemePicker() {
+    const themes = [
+      { id: 'red', label: 'Merah', color: '#e0121f' },
+      { id: 'blue', label: 'Biru', color: '#0960bf' },
+      { id: 'pink', label: 'Pink', color: '#c02168' },
+      { id: 'yellow', label: 'Kuning', color: '#c08a0a' }
+    ];
+    const stored = localStorage.getItem('ksf_theme_v1') || 'red';
+    document.body.dataset.theme = themes.some(t => t.id === stored) ? stored : 'red';
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="theme-switcher">
+        <button class="theme-switcher__toggle" id="themeToggle" type="button" aria-label="Ganti warna tema" aria-expanded="false">
+          <span aria-hidden="true">◐</span>
+        </button>
+        <div class="theme-picker" id="themePicker" hidden aria-label="Pilih warna tema">
+          ${themes.map(t => `<button type="button" class="theme-swatch theme-swatch--${t.id}" data-theme-choice="${t.id}" aria-label="Tema ${t.label}" title="${t.label}"></button>`).join('')}
+        </div>
+      </div>
+      <div class="theme-notice" id="themeNotice" role="status" aria-live="polite"></div>`);
+    const toggle = $('#themeToggle'), picker = $('#themePicker'), notice = $('#themeNotice');
+    const meta = $('meta[name="theme-color"]');
+    function setTheme(id, announce) {
+      const theme = themes.find(t => t.id === id) || themes[0];
+      document.body.dataset.theme = theme.id;
+      localStorage.setItem('ksf_theme_v1', theme.id);
+      if (meta) meta.content = theme.color;
+      if (announce && notice) {
+        notice.textContent = 'Tema ' + theme.label + ' diterapkan';
+        notice.classList.add('is-show');
+        clearTimeout(setTheme._timer);
+        setTheme._timer = setTimeout(() => notice.classList.remove('is-show'), 2200);
+      }
+    }
+    if (meta) meta.content = (themes.find(t => t.id === document.body.dataset.theme) || themes[0]).color;
+    if (toggle) toggle.addEventListener('click', () => {
+      const opening = picker.hidden;
+      picker.hidden = !opening;
+      toggle.setAttribute('aria-expanded', opening ? 'true' : 'false');
+    });
+    if (picker) picker.addEventListener('click', e => {
+      const swatch = e.target.closest('[data-theme-choice]');
+      if (!swatch) return;
+      setTheme(swatch.dataset.themeChoice, true);
+      picker.hidden = true;
+      toggle.setAttribute('aria-expanded', 'false');
+    });
+    window.addEventListener('storage', e => { if (e.key === 'ksf_theme_v1') setTheme(e.newValue, false); });
   }
 
   /* ---------- Kompres gambar ---------- */
@@ -124,21 +185,20 @@
     });
   });
 
-  /* ---------- Ripple ---------- */
-  $$('.btn, .icon-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      if (reduced) return;
-      const r = btn.getBoundingClientRect();
-      const size = Math.max(r.width, r.height);
-      const s = document.createElement('span');
-      s.className = 'ripple';
-      s.style.width = s.style.height = size + 'px';
-      s.style.left = (e.clientX - r.left - size / 2) + 'px';
-      s.style.top = (e.clientY - r.top - size / 2) + 'px';
-      btn.appendChild(s);
-      setTimeout(() => s.remove(), 620);
-    });
-  });
+  /* ---------- Ripple sentuh/klik ---------- */
+  document.addEventListener('pointerdown', (e) => {
+    const btn = e.target.closest('.btn, .icon-btn, .theme-switcher__toggle');
+    if (!btn || btn.disabled || reduced) return;
+    const r = btn.getBoundingClientRect();
+    const size = Math.max(r.width, r.height);
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = (e.clientX - r.left - size / 2) + 'px';
+    ripple.style.top = (e.clientY - r.top - size / 2) + 'px';
+    btn.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 620);
+  }, { passive: true });
 
   /* ---------- Tilt + glow kursor ---------- */
   if (!reduced) {
@@ -216,7 +276,18 @@
       $$('[data-stat="gens"]').forEach(el => animateNum(el, s.generations.length));
       $$('[data-stat="tags"]').forEach(el => animateNum(el, s.hashtags.length));
 
-      const sig = JSON.stringify(s);
+      const sig = JSON.stringify({
+        stats: s,
+        photos: s.generations.map(g => {
+          const p = KSF.genPhoto ? KSF.genPhoto(g.id) : '';
+          return [g.id, p.length, p.slice(0, 32), p.slice(-32)];
+        }),
+        links: KSF.getCustomLinks ? KSF.getCustomLinks() : [],
+        linkPhotos: KSF.getCustomLinks ? KSF.getCustomLinks().map(link => {
+          const p = KSF.customLinkPhoto ? KSF.customLinkPhoto(link.id) : '';
+          return [link.id, p.length, p.slice(0, 32), p.slice(-32)];
+        }) : []
+      });
       const changed = sig !== lastSig;
       lastSig = sig;
       if (!changed) return;
@@ -242,29 +313,66 @@
               <span>${g.active ? fmt(g.members) + ' member' : 'nonaktif'}</span>
             </div>
             <span class="genrow__bar"><i style="width:${g.active ? Math.round((Number(g.members) || 0) / max * 100) : 0}%"></i></span>
-            ${g.link ? `<a class="genrow__link" href="${esc(g.link)}" target="_blank" rel="noopener">Buka link grup →</a>` : ''}
+            ${safeExternalUrl(g.link) ? `<a class="genrow__link" href="${esc(safeExternalUrl(g.link))}" target="_blank" rel="noopener noreferrer">Buka link grup →</a>` : ''}
           </div>`).join('');
       }
 
       const heroGens = $('#heroGens');
       if (heroGens) heroGens.innerHTML = s.generations.slice(0, 3).map(g => `
-        <div><b>${g.active ? fmt(g.members) : 'Off'}</b><span>${esc(g.name)}</span></div>`).join('');
-      const bentoGens = $('#bentoGens');
-      if (bentoGens) bentoGens.innerHTML = s.generations.slice(0, 3).map(g => `
-        <div class="gen"><b>${esc(g.name)}</b><span>${g.active ? fmt(g.members) + ' Member' : 'Nonaktif'}</span></div>`).join('');
+        <div><b>${g.active ? fmt(g.members) : '—'}</b><span>${esc(g.name)}</span></div>`).join('');
+
+      const genPreview = $('#generationPreview');
+      if (genPreview) {
+        genPreview.innerHTML = s.generations.map((g, i) => {
+          const photo = KSF.genPhoto ? KSF.genPhoto(g.id) : '';
+          const link = safeExternalUrl(g.link);
+          return `<article class="gen-preview reveal" style="--d:${i % 6}">
+            <div class="gen-preview__photo">${photo
+              ? `<img src="${esc(photo)}" alt="Foto ${esc(g.name)}">`
+              : `<span>${esc(g.name)}</span>`}</div>
+            <div class="gen-preview__body">
+              <span class="gen-preview__eyebrow">ANGKATAN KESSOKU</span>
+              <div class="gen-preview__title"><h3>${esc(g.name)}</h3><span class="gen-state${g.active ? ' is-active' : ''}">${g.active ? 'Aktif' : 'Segera dibuka'}</span></div>
+              <p><b>${g.active ? fmt(g.members) : '—'}</b> member</p>
+              ${link && g.active ? `<a class="gen-preview__link" href="${esc(link)}" target="_blank" rel="noopener noreferrer">Buka undangan grup <span aria-hidden="true">↗</span></a>` : ''}
+            </div>
+          </article>`;
+        }).join('');
+        initReveal();
+      }
+
+      const linksSection = $('#customLinksSection');
+      const linksGrid = $('#customLinksGrid');
+      if (linksSection && linksGrid && KSF.getCustomLinks) {
+        const links = KSF.getCustomLinks();
+        linksSection.hidden = !links.length;
+        linksGrid.innerHTML = links.map(link => {
+          const href = safeExternalUrl(link.url);
+          const photo = KSF.customLinkPhoto ? KSF.customLinkPhoto(link.id) : '';
+          if (!href) return '';
+          return `<a class="custom-link-bar reveal" href="${esc(href)}" target="_blank" rel="noopener noreferrer">
+            <span class="custom-link-bar__photo">${photo ? `<img src="${esc(photo)}" alt="">` : `<span>${esc((link.title || '?').trim().charAt(0).toUpperCase())}</span>`}</span>
+            <b>${esc(link.title)}</b><span class="custom-link-bar__arrow" aria-hidden="true">↗</span>
+          </a>`;
+        }).join('');
+        initReveal();
+      }
 
       if (statFoot) statFoot.textContent = s.demo
-        ? 'Mode demo: angka disimpan lokal di browser. Hubungkan API di halaman Admin untuk data real-time.'
-        : 'Data real-time dari API · terakhir diperbarui ' + new Date().toLocaleTimeString('id-ID');
+        ? 'Rekap anggota dan hashtag mengikuti pembaruan data komunitas setiap Senin.'
+        : 'Data KSF dari database · jadwal rekap setiap Senin · diperiksa ' + new Date().toLocaleTimeString('id-ID');
     }
 
     renderStats();
-    if (liveBadge) liveBadge.hidden = !(KSF.apiConfigured && KSF.apiConfigured());
+    if (liveBadge) liveBadge.hidden = false;
 
     // Real-time: perubahan gen/hashtag/total di tab lain langsung tampil di sini
     window.addEventListener('storage', (e) => {
       if (!e.key) return;
       if (e.key === KSF.GEN_KEY || e.key === KSF.TAG_KEY || e.key === KSF.STATS_KEY || e.key === KSF.TOTAL_KEY) renderStats();
+      if (e.key === KSF.GEN_PHOTO_KEY || e.key === KSF.CUSTOM_LINKS_KEY || e.key === KSF.CUSTOM_LINK_PHOTO_KEY) {
+        lastSig = ''; renderStats();
+      }
       if (e.key === KSF.LOGO_KEY) applyLogo();
     });
 
@@ -276,6 +384,7 @@
         renderStats();
       }
     };
+    statsTick();
     setInterval(statsTick, statsMs);
   }
 
@@ -285,12 +394,17 @@
     if (foundersWrap && KSF.getFounders) {
       const fs = KSF.getFounders();
       foundersWrap.innerHTML = fs.length ? fs.map((f, i) => `
-      <article class="profile ${f.tier === 'owner' ? 'profile--owner' : ''} reveal" style="--d:${i}">
-        ${f.tier === 'owner' ? '<span class="profile__badge">Owner</span>' : ''}
-        ${KSF.avatarHTML(f, f.tier === 'owner' ? 'avatar--owner' : '')}
-        <span class="person__role">${esc(f.role)}</span>
-        <h3>${esc(f.name)}</h3>
-        <p>${esc(f.note || '')}</p>
+      <article class="profile profile--${esc(f.tier || 'lead')} reveal" style="--d:${i}">
+        <span class="profile__badge">${esc(f.role)}</span>
+        <div class="profile__visual">${KSF.avatarHTML(f, f.tier === 'owner' ? 'avatar--owner' : '')}
+          <span class="profile__stamp">${esc(f.tier === 'owner' ? 'PENGARAH KSF' : 'TIM INTI')}</span>
+        </div>
+        <div class="profile__content">
+          <span class="person__role">${esc(f.role)}</span>
+          <h3>${esc(f.name)} ${verifiedBadge()}</h3>
+          <p>${esc(f.note || '')}</p>
+          <span class="profile__signature">KESSOKU FAMILY · TEAM</span>
+        </div>
       </article>`).join('') : '<p class="cn-empty">Belum ada pendiri.</p>';
     }
 
@@ -299,30 +413,38 @@
       const ms = KSF.getMembers();
       teamGrid.innerHTML = ms.length ? ms.map((m, i) => `
       <article class="mcard reveal" style="--d:${i % 6}">
-        ${KSF.avatarHTML(m)}
-        <b>${esc(m.name)}</b>
-        <span>${esc(m.role)}</span>
+        <div class="mcard__photo">${KSF.avatarHTML(m)}</div>
+        <div class="mcard__info">
+          <b>${esc(m.name)} ${verifiedBadge()}</b>
+          <span>${esc(m.role)}</span>
+          <small>Anggota terverifikasi · Kessoku Family</small>
+        </div>
+        <span class="mcard__mark" aria-hidden="true">KSF</span>
       </article>`).join('') : '<p class="cn-empty">Belum ada admin. Tambahkan lewat halaman Admin.</p>';
     }
     initReveal();
   }
   if ($('#founders') || $('#teamGrid')) {
     renderTeamPage();
+    if (KSF.apiConfigured && KSF.apiConfigured()) KSF.refreshStats().then(renderTeamPage).catch(() => {});
     // Real-time: perubahan team di tab lain langsung tampil
-    window.addEventListener('storage', (e) => { if (e.key === KSF.TEAM_KEY) renderTeamPage(); });
+    window.addEventListener('storage', (e) => {
+      if (e.key === KSF.TEAM_KEY || e.key === KSF.KEY) renderTeamPage();
+    });
   }
 
   /* ---------- Render: Admin page ---------- */
   const adminGrid = $('#adminGrid');
   if (adminGrid && KSF.all) {
-    adminGrid.innerHTML = KSF.all().map((m, i) => {
-      const has = !!KSF.photoOf(m.id);
-      return `
-      <article class="acard reveal" style="--d:${i % 6}" data-id="${m.id}">
+    function renderAdminGrid() {
+      adminGrid.innerHTML = KSF.all().map((m, i) => {
+        const has = !!KSF.photoOf(m.id);
+        return `
+      <article class="acard reveal" style="--d:${i % 6}" data-id="${esc(m.id)}">
         <div class="avatar-holder">${KSF.avatarHTML(m)}</div>
         <div class="acard__info">
-          <b>${m.name}</b>
-          <span>${m.role}</span>
+          <b>${esc(m.name)} ${verifiedBadge()}</b>
+          <span>${esc(m.role)}</span>
           ${has ? '<span class="saved">✓ Foto kustom aktif</span>' : ''}
         </div>
         <div class="acard__actions">
@@ -335,7 +457,12 @@
         </div>
         <input type="file" accept="image/*" hidden>
       </article>`;
-    }).join('');
+      }).join('');
+      initReveal();
+    }
+    renderAdminGrid();
+    window.addEventListener('ksf:team-updated', renderAdminGrid);
+    window.addEventListener('ksf:remote-data-updated', renderAdminGrid);
 
     adminGrid.addEventListener('click', (e) => {
       const btn = e.target.closest('.icon-btn');
@@ -349,6 +476,7 @@
       } else {
         KSF.removePhoto(id);
         refreshCard(card, item);
+        if (KSF.pushSetting) KSF.pushSetting('team_photos', KSF.getPhotos()).catch(() => {});
         showToast('Foto dihapus', `Profil ${item.name} kembali ke inisial.`);
       }
     });
@@ -362,6 +490,7 @@
       readImage(input.files[0], 420, (dataUrl) => {
         KSF.setPhoto(id, dataUrl);
         refreshCard(card, item);
+        if (KSF.pushSetting) KSF.pushSetting('team_photos', KSF.getPhotos()).catch(() => {});
         showToast('Foto tersimpan', `Foto profil ${item.name} berhasil diganti.`);
       });
       input.value = '';
@@ -382,6 +511,7 @@
     const resetBtn = $('#resetPhotos');
     if (resetBtn) resetBtn.addEventListener('click', () => {
       localStorage.removeItem(KSF.KEY);
+      if (KSF.pushSetting) KSF.pushSetting('team_photos', {}).catch(() => {});
       $$('.acard', adminGrid).forEach(card => {
         refreshCard(card, KSF.all().find(x => x.id === card.dataset.id));
       });
@@ -447,21 +577,30 @@
     function renderGens() {
       const list = $('#genList');
       if (!list || !KSF.getGenerations) return;
-      list.innerHTML = KSF.getGenerations().map(g => `
+      list.innerHTML = KSF.getGenerations().map(g => {
+        const photo = KSF.genPhoto ? KSF.genPhoto(g.id) : '';
+        return `
         <div class="genrow-admin${g.active ? '' : ' is-off'}" data-id="${g.id}">
           <label class="switch" title="Aktif / nonaktif">
             <input type="checkbox" data-act="toggle" ${g.active ? 'checked' : ''}>
             <span class="switch__track"><span class="switch__dot"></span></span>
           </label>
+          <span class="genrow-admin__photo">${photo ? `<img src="${esc(photo)}" alt="Foto ${esc(g.name)}">` : esc((g.name || '?').slice(0, 1).toUpperCase())}</span>
           <div class="genrow-admin__fields">
             <input class="gname" data-field="name" value="${esc(g.name)}" aria-label="Nama gen">
             <input class="glink" data-field="link" value="${esc(g.link || '')}" placeholder="Link grup (opsional)" aria-label="Link gen">
             <input class="gmem" data-field="members" type="number" min="0" value="${Number(g.members) || 0}" aria-label="Jumlah member">
           </div>
+          <label class="icon-btn icon-btn--primary gen-photo-upload">
+            <input class="gen-photo-input" type="file" accept="image/*" hidden>
+            <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg> Foto
+          </label>
+          ${photo ? `<button class="icon-btn gen-photo-remove" type="button" data-act="photo-remove" aria-label="Hapus foto gen">×</button>` : ''}
           <button class="icon-btn icon-btn--danger" type="button" data-act="del" aria-label="Hapus gen">
             <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>
           </button>
-        </div>`).join('');
+        </div>`;
+      }).join('');
     }
 
     /* ---- Kelola hashtag ---- */
@@ -544,7 +683,10 @@
       const ms = Math.max(3000, (window.KSF_CONFIG ? KSF_CONFIG.refreshMs() : 15000));
       pollTimer = setInterval(() => {
         if (!(KSF.apiConfigured && KSF.apiConfigured())) return;
-        KSF.refreshStats().then(() => { renderGens(); renderTags(); }).catch(() => {});
+        KSF.refreshStats().then(() => {
+          renderGens(); renderTags(); renderTeamAdmin(); renderCustomLinkAdmin();
+          window.dispatchEvent(new Event('ksf:remote-data-updated'));
+        }).catch(() => {});
       }, ms);
     }
 
@@ -558,8 +700,8 @@
       if (st) {
         st.classList.remove('is-live');
         if (apiOn) st.textContent = 'Tersimpan di database · total ' + fmt(cur) + ' member.';
-        else if (ov != null) st.textContent = 'Mode manual · total dipatok ' + fmt(cur) + ' member.';
-        else st.textContent = 'Otomatis dari jumlah gen aktif · total ' + fmt(cur) + ' member.';
+        else if (ov != null) st.textContent = 'Angka pengelola · total ' + fmt(cur) + ' member.';
+        else st.textContent = 'Mengikuti jumlah gen aktif · total ' + fmt(cur) + ' member.';
       }
     }
 
@@ -576,6 +718,7 @@
         renderTags();
         renderTotal();
         renderTeamAdmin();
+        renderCustomLinkAdmin();
         if (owner) { renderAccounts(); loadApiFields(); startStatsPoll(); }
       } else {
         loginGate.hidden = false;
@@ -693,6 +836,8 @@
         const nameEl = rowEl && rowEl.querySelector('.teamrow__info b');
         const val = inp.value.trim() || 'Admin';
         KSF.updateTeamMember(rowEl.dataset.id, { role: val });
+        if (KSF.pushSetting) KSF.pushSetting('team_data', KSF.getTeam()).catch(() => {});
+        window.dispatchEvent(new Event('ksf:team-updated'));
         showToast('Keterangan diperbarui', `${nameEl ? nameEl.textContent : ''} → ${val}.`);
       });
       // Hapus anggota team
@@ -702,6 +847,8 @@
         const nameEl = rowEl && rowEl.querySelector('.teamrow__info b');
         if (!window.confirm('Hapus ' + (nameEl ? nameEl.textContent : 'anggota ini') + ' dari halaman Team?')) return;
         KSF.removeTeamMember(del.dataset.teamDel);
+        if (KSF.pushSetting) KSF.pushSetting('team_data', KSF.getTeam()).catch(() => {});
+        window.dispatchEvent(new Event('ksf:team-updated'));
         del.dataset.teamDel = '';
         renderTeamAdmin();
         showToast('Dihapus', `${nameEl ? nameEl.textContent : 'Anggota'} dihapus dari Team.`);
@@ -717,16 +864,107 @@
       const section = ($('#teamSection') && $('#teamSection').value) || 'members';
       if (!name) { showToast('Belum lengkap', 'Isi nama anggota dulu.'); return; }
       KSF.addTeamMember({ name, role: role || 'Admin', group: section });
+      if (KSF.pushSetting) KSF.pushSetting('team_data', KSF.getTeam()).catch(() => {});
+      window.dispatchEvent(new Event('ksf:team-updated'));
       addTeamForm.reset();
       renderTeamAdmin();
       showToast('Ditambahkan', `${name} sekarang tampil di halaman Team.`);
     });
 
+    /* ---- Kelola bar tautan Home ---- */
+    function syncCustomLinks() {
+      if (!KSF.pushSetting) return;
+      KSF.pushSetting('custom_links', KSF.getCustomLinks()).catch(() => {});
+      KSF.pushSetting('custom_link_photos', KSF.getCustomLinkPhotos()).catch(() => {});
+    }
+    function renderCustomLinkAdmin() {
+      const list = $('#customLinkAdminList');
+      if (!list || !KSF.getCustomLinks) return;
+      const links = KSF.getCustomLinks();
+      list.innerHTML = links.length ? links.map(link => `
+        <div class="custom-link-admin-row" data-id="${esc(link.id)}">
+          <span class="custom-link-admin-row__photo">${KSF.customLinkPhoto(link.id)
+            ? `<img src="${esc(KSF.customLinkPhoto(link.id))}" alt="Foto ${esc(link.title)}">`
+            : esc((link.title || '?').trim().charAt(0).toUpperCase())}</span>
+          <input type="text" data-custom-field="title" value="${esc(link.title)}" aria-label="Nama bar">
+          <input type="url" data-custom-field="url" value="${esc(link.url)}" aria-label="URL HTTPS">
+          <label class="icon-btn icon-btn--primary">
+            <input type="file" data-custom-photo hidden accept="image/*">
+            <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg> Foto
+          </label>
+          <button type="button" class="icon-btn icon-btn--danger" data-custom-remove aria-label="Hapus bar">Hapus</button>
+        </div>`).join('') : '<p class="cn-empty">Belum ada bar tautan.</p>';
+    }
+    const customLinkAdminList = $('#customLinkAdminList');
+    if (customLinkAdminList) {
+      customLinkAdminList.addEventListener('change', e => {
+        const row = e.target.closest('.custom-link-admin-row');
+        if (!row) return;
+        const photoInput = e.target.closest('[data-custom-photo]');
+        if (photoInput && photoInput.files && photoInput.files[0]) {
+          readImage(photoInput.files[0], 360, dataUrl => {
+            KSF.setCustomLinkPhoto(row.dataset.id, dataUrl);
+            syncCustomLinks();
+            renderCustomLinkAdmin();
+            showToast('Foto bar diperbarui', 'Foto tautan akan tampil di Home.');
+          });
+          photoInput.value = '';
+          return;
+        }
+        const field = e.target.dataset.customField;
+        if (!field) return;
+        const value = e.target.value.trim();
+        if (field === 'url' && (!value || !/^https:\/\//i.test(value) || !safeExternalUrl(value))) {
+          showToast('Tautan tidak valid', 'Gunakan URL HTTPS yang lengkap.');
+          renderCustomLinkAdmin();
+          return;
+        }
+        KSF.updateCustomLink(row.dataset.id, { [field]: value });
+        syncCustomLinks();
+        showToast('Bar diperbarui', 'Perubahan akan tampil di Home.');
+      });
+      customLinkAdminList.addEventListener('click', e => {
+        const remove = e.target.closest('[data-custom-remove]');
+        if (!remove) return;
+        const row = remove.closest('.custom-link-admin-row');
+        KSF.removeCustomLink(row.dataset.id);
+        syncCustomLinks();
+        renderCustomLinkAdmin();
+        showToast('Bar dihapus', 'Tautan sudah dihapus dari Home.');
+      });
+    }
+    const addCustomLinkForm = $('#addCustomLinkForm');
+    if (addCustomLinkForm) addCustomLinkForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const title = $('#customLinkTitle').value.trim();
+      const url = $('#customLinkUrl').value.trim();
+      if (!title || !/^https:\/\//i.test(url) || !safeExternalUrl(url)) {
+        showToast('Data belum valid', 'Isi nama bar dan URL HTTPS yang benar.');
+        return;
+      }
+      KSF.addCustomLink({ title, url });
+      addCustomLinkForm.reset();
+      syncCustomLinks();
+      renderCustomLinkAdmin();
+      showToast('Bar ditambahkan', `${title} siap tampil di Home.`);
+    });
+
     const genList = $('#genList');
     if (genList) {
       genList.addEventListener('change', (e) => {
+        const photoInput = e.target.closest('.gen-photo-input');
         const row = e.target.closest('.genrow-admin'); if (!row) return;
         const id = row.dataset.id;
+        if (photoInput && photoInput.files && photoInput.files[0]) {
+          readImage(photoInput.files[0], 360, (dataUrl) => {
+            KSF.setGenPhoto(id, dataUrl);
+            if (KSF.pushSetting) KSF.pushSetting('generation_photos', KSF.getGenPhotos()).catch(() => {});
+            renderGens();
+            showToast('Foto gen diperbarui', 'Preview generasi di Home sudah diperbarui.');
+          });
+          photoInput.value = '';
+          return;
+        }
         const g = KSF.getGenerations().find(x => x.id === id);
         if (e.target.dataset.act === 'toggle') {
           KSF.updateGeneration(id, { active: e.target.checked });
@@ -741,9 +979,20 @@
         }
       });
       genList.addEventListener('click', (e) => {
+        const photoRemove = e.target.closest('[data-act="photo-remove"]');
+        if (photoRemove) {
+          const photoRow = photoRemove.closest('.genrow-admin');
+          KSF.removeGenPhoto(photoRow.dataset.id);
+          if (KSF.pushSetting) KSF.pushSetting('generation_photos', KSF.getGenPhotos()).catch(() => {});
+          renderGens();
+          showToast('Foto gen dihapus', 'Preview kembali memakai inisial generasi.');
+          return;
+        }
         const del = e.target.closest('[data-act="del"]'); if (!del) return;
         const row = del.closest('.genrow-admin');
         KSF.removeGeneration(row.dataset.id);
+        KSF.removeGenPhoto(row.dataset.id);
+        if (KSF.pushSetting) KSF.pushSetting('generation_photos', KSF.getGenPhotos()).catch(() => {});
         renderGens();
         pushGeneration('DELETE', row.dataset.id, null);
         showToast('Gen dihapus', 'Generasi berhasil dihapus.');
@@ -760,6 +1009,7 @@
       const id = 'gen_' + Date.now().toString(36);
       KSF.addGeneration({ id, name, link, members, active: true });
       pushGeneration('POST', null, { id, name, link, members, active: true });
+      if (KSF.pushSetting) KSF.pushSetting('generation_photos', KSF.getGenPhotos()).catch(() => {});
       addGenForm.reset();
       $('#genMembers').value = 0;
       renderGens();
@@ -782,7 +1032,7 @@
       const val = Number(inp.value) || 0;
       KSF.updateHashtag(inp.dataset.count, { count: val });
       pushHashtag('PUT', inp.dataset.count, { count: val });
-      showToast('Jumlah diperbarui', `${inp.dataset.count} = ${fmt(val)} post (manual).`);
+      showToast('Jumlah diperbarui', `${inp.dataset.count} = ${fmt(val)} post.`);
     });
 
     const addTagForm = $('#addTagForm');
@@ -805,7 +1055,7 @@
         if (apiOn && KSF.clearRemoteTotal) {
           KSF.clearRemoteTotal().then(() => KSF.refreshStats()).then(renderTotal).catch(() => renderTotal());
         }
-        showToast('Total member otomatis', 'Dihitung dari jumlah gen aktif.');
+        showToast('Total mengikuti gen', 'Jumlah dihitung dari gen yang aktif.');
       } else {
         if (apiOn && KSF.pushTotal) {
           KSF.pushTotal(val).then(() => KSF.refreshStats()).then(renderTotal).catch(() => renderTotal());
@@ -892,7 +1142,7 @@
       // Jaga-jaga: bila belum ada gen sama sekali, tetap sediakan satu opsi
       if (!gens.length) gens = [{ id: 'umum', name: 'Umum', active: true }];
       genSel.innerHTML = '<option value="" disabled hidden></option>' +
-        gens.map(g => `<option value="${esc(g.id)}">${esc(g.name)}${g.active ? '' : ' (Coming Soon)'}</option>`).join('');
+        gens.map(g => `<option value="${esc(g.id)}" ${g.active ? '' : 'disabled'}>${esc(g.name)}${g.active ? '' : ' (Segera dibuka)'}</option>`).join('');
       genSel.value = (prev && gens.some(g => g.id === prev)) ? prev : '';
     }
     fillGenSelect();
@@ -987,12 +1237,15 @@
     }
 
     let cnList = [];
+    let selectedCN = '';
 
-    // Bangun daftar CN dari template di Setting (keyword `name` -> nama pendaftar)
+    // Ganti placeholder nickname tanpa mengubah karakter lain di template.
     function buildCN(name) {
-      const b = toBold(name);
+      const cleanName = String(name || '').trim();
       const cns = (KSF.getCNs ? KSF.getCNs() : []) || [];
-      return cns.map(c => String(c.tpl == null ? '' : c.tpl).replace(/name/gi, b));
+      return cns.map(c => String(c.tpl == null ? '' : c.tpl)
+        .replace(/\{\{\s*name\s*\}\}/gi, cleanName)
+        .replace(/\bname\b/gi, cleanName));
     }
 
     const $cnBlock = $('#cnBlock');
@@ -1007,6 +1260,7 @@
 
     function renderBars(name) {
       cnList = buildCN(name);
+      if (!cnList.includes(selectedCN)) selectedCN = cnList[0] || '';
       if (!cnList.length) {
         $cnBars.innerHTML = '<p class="cn-empty">Admin belum membuat bar CN. Coba lagi nanti ya.</p>';
         return;
@@ -1055,6 +1309,7 @@
       const btn = e.target.closest('.cnbar__copy');
       if (!btn) return;
       const text = btn.dataset.copy;
+      selectedCN = text;
       const done = () => {
         const old = btn.innerHTML;
         btn.classList.add('is-copied');
@@ -1077,7 +1332,7 @@
       }
     });
 
-    // Bergabung: buka link grup gen + kirim data ke API/bot
+    // Buka undangan gen dan siapkan ringkasan untuk ditempel oleh pengguna.
     const joinBtn = $('#joinBtn');
     if (joinBtn) joinBtn.addEventListener('click', () => {
       const name = ($cnName.value || (reg && (reg.tiktok || reg.nama)) || '').trim();
@@ -1087,57 +1342,73 @@
 
       const gens = (KSF.getGenerations ? KSF.getGenerations() : []) || [];
       const gen = gens.find(g => reg && g.id === reg.genId) || null;
-      const link = gen && gen.link;
+      if (!gen || !gen.active) {
+        showToast('Gen belum tersedia', 'Pilih gen yang sedang dibuka dari halaman Home.');
+        return;
+      }
+      const link = safeExternalUrl(gen.link);
+      if (!link) {
+        showToast('Undangan belum tersedia', 'Link grup untuk gen ini belum diatur.');
+        return;
+      }
 
       const payload = {
         nama: reg ? reg.nama : '',
-        tiktok: reg ? reg.tiktok : '',
+        tiktok: name,
         email: reg ? reg.email : '',
-        gen: reg ? reg.genName : '',
+        gen: gen.name,
         alasan: reg ? reg.alasan : '',
         cns: cnList.slice(),
         cn1: cnList[0] || '', cn2: cnList[1] || '', cn3: cnList[2] || '',
         joinedAt: Date.now()
       };
 
-      // Buka grup sesuai gen yang dipilih (link diisi dari Setting)
-      if (link) {
-        window.open(link, '_blank', 'noopener');
-      } else {
-        showToast('Link grup belum diisi', 'Admin belum mengisi link gen ini. Hubungi admin.');
-      }
-
-      // Kirim otomatis ke database/bot lewat API
+      // Membuka undangan tidak dapat menekan tombol Join di WhatsApp untuk pengguna.
+      window.open(link, '_blank', 'noopener,noreferrer');
+      const message = [
+        'Pendaftaran Kessoku Family',
+        'Nama: ' + (payload.nama || '-'),
+        'Akun: ' + (payload.tiktok || '-'),
+        'Gen: ' + payload.gen,
+        'Alasan: ' + (payload.alasan || '-'),
+        'CN: ' + (selectedCN || payload.cn1 || '-')
+      ].join('\n');
       const note = $('#joinNote');
-      if (KSF.apiConfigured && KSF.apiConfigured()) {
-        if (note) note.textContent = 'Mengirim datamu ke admin...';
-        KSF.apiSend('POST', '/join', payload)
-          .then(() => { if (note) note.textContent = 'Data sudah terkirim ke admin. Selamat bergabung!'; showToast('Terkirim', 'Data & CN kamu terkirim ke admin.'); })
-          .catch(() => { if (note) note.textContent = 'Gagal kirim otomatis. Salin pesan manual di bawah.'; copyFallback(payload); });
-      } else {
-        // Mode demo: salin pesan agar bisa dikirim manual ke grup
-        copyFallback(payload);
-        if (note) note.textContent = 'Mode demo: pesan datamu disalin, kirim ke grup/owner.';
-      }
+      const copyResult = copyRegistrationMessage(message);
+      const apiResult = KSF.apiConfigured && KSF.apiConfigured()
+        ? KSF.apiSend('POST', '/join', payload).then(() => true).catch(() => false)
+        : Promise.resolve(null);
+      Promise.all([copyResult, apiResult]).then(([copied, stored]) => {
+        let status = copied
+          ? 'Undangan grup dibuka. Ringkasan tersalin; tempel di WhatsApp. Konfirmasi Join dilakukan di WhatsApp.'
+          : 'Undangan grup dibuka. Salin ringkasan dari kotak yang muncul, lalu tempel di WhatsApp.';
+        if (stored === true) status += ' Data formulir juga tercatat di database.';
+        if (stored === false) status += ' Data belum tercatat di database.';
+        if (note) note.textContent = status;
+        showToast(copied ? 'Ringkasan disalin' : 'Undangan dibuka', copied
+          ? 'Tempel pesan di WhatsApp untuk mengirimkannya.'
+          : 'Salin ringkasan pendaftaran lalu tempel di WhatsApp.');
+      });
     });
 
-    function copyFallback(p) {
-      const lines = [
-        'Pendaftaran Kessoku Family',
-        'Nama: ' + (p.nama || '-'),
-        'TikTok: ' + (p.tiktok || '-'),
-        'Email: ' + (p.email || '-'),
-        'Gen: ' + (p.gen || '-'),
-        'Alasan: ' + (p.alasan || '-')
-      ];
-      (p.cns || [p.cn1, p.cn2, p.cn3]).forEach((c, i) => { if (c) lines.push('CN ' + (i + 1) + ': ' + c); });
-      const msg = lines.join('\n');
-      try { navigator.clipboard.writeText(msg); } catch (e) { /* abaikan */ }
-      showToast('Pesan disalin', 'Data & CN disalin — kirim ke grup/owner.');
+    async function copyRegistrationMessage(message) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try { await navigator.clipboard.writeText(message); return true; } catch (e) { /* fallback */ }
+      }
+      const ta = document.createElement('textarea');
+      ta.value = message; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      let copied = false;
+      try { copied = document.execCommand('copy'); } catch (e) { /* fallback */ }
+      ta.remove();
+      if (!copied) window.prompt('Salin ringkasan ini untuk ditempel di WhatsApp:', message);
+      return copied;
     }
   }
 
   /* ---------- Init ---------- */
+  initThemePicker();
   applyLogo();
   initReveal();
   initCounters();
