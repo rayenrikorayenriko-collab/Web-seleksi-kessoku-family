@@ -268,7 +268,6 @@
   const statSection = $('#statistik');
   if (statSection && KSF.localStats) {
     const tagStats = $('#tagStats');
-    const genStats = $('#genStats');
     const statFoot = $('#statFoot');
     const liveBadge = $('#liveBadge');
     let lastSig = '';
@@ -305,18 +304,6 @@
             <span class="tagstat__bar"><i style="width:${Math.round((Number(t.count) || 0) / max * 100)}%"></i></span>
           </article>`).join('');
         $$('.tagstat__num', tagStats).forEach((el, i) => animateNum(el, Number(s.hashtags[i].count) || 0));
-      }
-
-      if (genStats) {
-        const max = Math.max(1, ...s.generations.map(g => Number(g.members) || 0));
-        genStats.innerHTML = s.generations.map((g, i) => `
-          <div class="genrow${g.active ? '' : ' is-off'}" style="--d:${i % 6}">
-            <div class="genrow__top">
-              <b>${esc(g.name)}</b>
-              <span>${g.active ? fmt(g.members) + ' member' : 'nonaktif'}</span>
-            </div>
-            <span class="genrow__bar"><i style="width:${g.active ? Math.round((Number(g.members) || 0) / max * 100) : 0}%"></i></span>
-          </div>`).join('');
       }
 
       const heroGens = $('#heroGens');
@@ -392,7 +379,15 @@
   function renderTeamPage() {
     const foundersWrap = $('#founders');
     if (foundersWrap && KSF.getFounders) {
-      const fs = KSF.getFounders();
+      const rank = f => {
+        const role = String(f.role || '').toLowerCase().replace(/\s+/g, ' ');
+        if (/co[\s-]*owner/.test(role)) return 2;
+        if (/\bowner\b/.test(role)) return 1;
+        if (/\bleader\b/.test(role)) return 0;
+        return 3;
+      };
+      const fs = KSF.getFounders().slice().sort((a, b) => rank(a) - rank(b));
+      const ownerIndex = fs.findIndex(f => rank(f) === 1);
       foundersWrap.innerHTML = fs.length ? fs.map((f, i) => `
       <article class="profile profile--${esc(f.tier || 'lead')} reveal" style="--d:${i}">
         <span class="profile__badge">${esc(f.role)}</span>
@@ -406,6 +401,14 @@
           <span class="profile__signature">KESSOKU FAMILY · TEAM</span>
         </div>
       </article>`).join('') : '<p class="cn-empty">Belum ada pendiri.</p>';
+      const ownerCard = ownerIndex >= 0 ? foundersWrap.children[ownerIndex] : null;
+      if (ownerCard) requestAnimationFrame(() => {
+        const trackRect = foundersWrap.getBoundingClientRect();
+        const ownerRect = ownerCard.getBoundingClientRect();
+        const delta = (ownerRect.left + ownerRect.width / 2) - (trackRect.left + trackRect.width / 2);
+        const left = foundersWrap.scrollLeft + delta;
+        foundersWrap.scrollTo({ left: Math.max(0, left), behavior: reduced ? 'auto' : 'smooth' });
+      });
     }
 
     const teamGrid = $('#teamGrid');

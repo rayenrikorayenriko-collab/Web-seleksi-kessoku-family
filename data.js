@@ -143,11 +143,20 @@ window.KSF = (function () {
   function removeLogo() { localStorage.removeItem(LOGO_KEY); }
 
   // ---- Generasi (angkatan) ----
+  function orderGenerations(list) {
+    return (Array.isArray(list) ? list : [])
+      .map((generation, index) => {
+        const match = String(generation.name || '').match(/\b(?:gen(?:erasi)?)[\s_-]*v?(\d+)\b/i);
+        return { generation, index, number: match ? Number(match[1]) : Number.MAX_SAFE_INTEGER };
+      })
+      .sort((a, b) => a.number - b.number || a.index - b.index)
+      .map(item => item.generation);
+  }
   function getGenerations() {
     try {
       const l = JSON.parse(localStorage.getItem(GEN_KEY));
-      return Array.isArray(l) ? l : DEFAULT_GENS.slice();
-    } catch (e) { return DEFAULT_GENS.slice(); }
+      return orderGenerations(Array.isArray(l) ? l : DEFAULT_GENS);
+    } catch (e) { return orderGenerations(DEFAULT_GENS); }
   }
   function saveGenerations(list) { localStorage.setItem(GEN_KEY, JSON.stringify(list)); }
   function addGeneration(g) { const l = getGenerations(); l.push(g); saveGenerations(l); return l; }
@@ -391,9 +400,9 @@ window.KSF = (function () {
     if (isSupabase()) {
       const gens = await apiGet('/generations?select=*&order=name.asc');
       const tags = await apiGet('/hashtags?select=*&order=tag.asc');
-      const generations = Array.isArray(gens) ? gens.map(g => ({
+      const generations = orderGenerations(Array.isArray(gens) ? gens.map(g => ({
         id: g.id, name: g.name, link: g.link || '', members: Number(g.members) || 0, active: !!g.active
-      })) : [];
+      })) : []);
       const hashtags = Array.isArray(tags)
         ? tags.map(t => ({ tag: t.tag, count: Number(t.count) || 0 })) : [];
       saveGenerations(generations);
@@ -421,7 +430,10 @@ window.KSF = (function () {
       return { generations, hashtags, totalMembers: total };
     }
     const data = await apiGet('/stats');
-    if (Array.isArray(data.generations)) saveGenerations(data.generations);
+    if (Array.isArray(data.generations)) {
+      data.generations = orderGenerations(data.generations);
+      saveGenerations(data.generations);
+    }
     if (Array.isArray(data.hashtags)) saveHashtags(data.hashtags);
     if (typeof data.totalMembers === 'number') {
       localStorage.setItem(STATS_KEY, JSON.stringify({ totalMembers: data.totalMembers, at: Date.now() }));
