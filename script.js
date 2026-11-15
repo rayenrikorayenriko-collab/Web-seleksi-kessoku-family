@@ -29,7 +29,10 @@
   }
   function safeExternalUrl(raw) {
     try {
-      const url = new URL(String(raw || '').trim());
+      let value = String(raw || '').trim();
+      if (!value) return '';
+      if (!/^https?:\/\//i.test(value)) value = 'https://' + value;
+      const url = new URL(value);
       return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : '';
     } catch (e) { return ''; }
   }
@@ -313,7 +316,6 @@
               <span>${g.active ? fmt(g.members) + ' member' : 'nonaktif'}</span>
             </div>
             <span class="genrow__bar"><i style="width:${g.active ? Math.round((Number(g.members) || 0) / max * 100) : 0}%"></i></span>
-            ${safeExternalUrl(g.link) ? `<a class="genrow__link" href="${esc(safeExternalUrl(g.link))}" target="_blank" rel="noopener noreferrer">Buka link grup →</a>` : ''}
           </div>`).join('');
       }
 
@@ -325,7 +327,6 @@
       if (genPreview) {
         genPreview.innerHTML = s.generations.map((g, i) => {
           const photo = KSF.genPhoto ? KSF.genPhoto(g.id) : '';
-          const link = safeExternalUrl(g.link);
           return `<article class="gen-preview reveal" style="--d:${i % 6}">
             <div class="gen-preview__photo">${photo
               ? `<img src="${esc(photo)}" alt="Foto ${esc(g.name)}">`
@@ -334,7 +335,6 @@
               <span class="gen-preview__eyebrow">ANGKATAN KESSOKU</span>
               <div class="gen-preview__title"><h3>${esc(g.name)}</h3><span class="gen-state${g.active ? ' is-active' : ''}">${g.active ? 'Aktif' : 'Segera dibuka'}</span></div>
               <p><b>${g.active ? fmt(g.members) : '—'}</b> member</p>
-              ${link && g.active ? `<a class="gen-preview__link" href="${esc(link)}" target="_blank" rel="noopener noreferrer">Buka undangan grup <span aria-hidden="true">↗</span></a>` : ''}
             </div>
           </article>`;
         }).join('');
@@ -417,7 +417,7 @@
         <div class="mcard__info">
           <b>${esc(m.name)} ${verifiedBadge()}</b>
           <span>${esc(m.role)}</span>
-          <small>Anggota terverifikasi · Kessoku Family</small>
+          <small>Admin terverifikasi · Kessoku Family</small>
         </div>
         <span class="mcard__mark" aria-hidden="true">KSF</span>
       </article>`).join('') : '<p class="cn-empty">Belum ada admin. Tambahkan lewat halaman Admin.</p>';
@@ -887,7 +887,7 @@
             ? `<img src="${esc(KSF.customLinkPhoto(link.id))}" alt="Foto ${esc(link.title)}">`
             : esc((link.title || '?').trim().charAt(0).toUpperCase())}</span>
           <input type="text" data-custom-field="title" value="${esc(link.title)}" aria-label="Nama bar">
-          <input type="url" data-custom-field="url" value="${esc(link.url)}" aria-label="URL HTTPS">
+          <input type="text" inputmode="url" data-custom-field="url" value="${esc(link.url)}" aria-label="URL tujuan">
           <label class="icon-btn icon-btn--primary">
             <input type="file" data-custom-photo hidden accept="image/*">
             <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg> Foto
@@ -914,12 +914,12 @@
         const field = e.target.dataset.customField;
         if (!field) return;
         const value = e.target.value.trim();
-        if (field === 'url' && (!value || !/^https:\/\//i.test(value) || !safeExternalUrl(value))) {
-          showToast('Tautan tidak valid', 'Gunakan URL HTTPS yang lengkap.');
+        if (field === 'url' && !safeExternalUrl(value)) {
+          showToast('Tautan tidak valid', 'Masukkan URL web yang valid, misalnya www.tiktok.com/@akun.');
           renderCustomLinkAdmin();
           return;
         }
-        KSF.updateCustomLink(row.dataset.id, { [field]: value });
+        KSF.updateCustomLink(row.dataset.id, { [field]: field === 'url' ? safeExternalUrl(value) : value });
         syncCustomLinks();
         showToast('Bar diperbarui', 'Perubahan akan tampil di Home.');
       });
@@ -938,11 +938,12 @@
       e.preventDefault();
       const title = $('#customLinkTitle').value.trim();
       const url = $('#customLinkUrl').value.trim();
-      if (!title || !/^https:\/\//i.test(url) || !safeExternalUrl(url)) {
-        showToast('Data belum valid', 'Isi nama bar dan URL HTTPS yang benar.');
+      const normalizedUrl = safeExternalUrl(url);
+      if (!title || !normalizedUrl) {
+        showToast('Data belum valid', 'Isi nama bar dan URL web yang valid.');
         return;
       }
-      KSF.addCustomLink({ title, url });
+      KSF.addCustomLink({ title, url: normalizedUrl });
       addCustomLinkForm.reset();
       syncCustomLinks();
       renderCustomLinkAdmin();
@@ -1135,17 +1136,40 @@
   if (form) {
     // Isi pilihan Gen dari data setting (nama + link grup)
     const genSel = $('#gen');
+    const genPicker = $('#genPicker');
     function fillGenSelect() {
       if (!genSel || !KSF.getGenerations) return;
       const prev = genSel.value;
       let gens = KSF.getGenerations();
       // Jaga-jaga: bila belum ada gen sama sekali, tetap sediakan satu opsi
       if (!gens.length) gens = [{ id: 'umum', name: 'Umum', active: true }];
-      genSel.innerHTML = '<option value="" disabled hidden></option>' +
-        gens.map(g => `<option value="${esc(g.id)}" ${g.active ? '' : 'disabled'}>${esc(g.name)}${g.active ? '' : ' (Segera dibuka)'}</option>`).join('');
-      genSel.value = (prev && gens.some(g => g.id === prev)) ? prev : '';
+      const selected = prev && gens.some(g => g.id === prev && g.active) ? prev : '';
+      genSel.value = selected;
+      if (genPicker) {
+        genPicker.innerHTML = gens.map((g, i) => `
+          <button type="button" class="gen-choice${selected === g.id ? ' is-selected' : ''}" data-gen-choice="${esc(g.id)}"
+            aria-pressed="${selected === g.id}" ${g.active ? '' : 'disabled'} style="--d:${i % 6}">
+            <span class="gen-choice__mark" aria-hidden="true">${selected === g.id ? '✓' : 'G'}</span>
+            <span class="gen-choice__copy"><b>${esc(g.name)}</b><small>${g.active ? `${fmt(g.members || 0)} member` : 'Segera dibuka'}</small></span>
+            <span class="gen-choice__arrow" aria-hidden="true">›</span>
+          </button>`).join('');
+      }
     }
     fillGenSelect();
+    if (genPicker) genPicker.addEventListener('click', e => {
+      const choice = e.target.closest('[data-gen-choice]');
+      if (!choice || choice.disabled) return;
+      genSel.value = choice.dataset.genChoice;
+      $$('.gen-choice', genPicker).forEach(button => {
+        const selected = button === choice;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', String(selected));
+        const mark = $('.gen-choice__mark', button);
+        if (mark) mark.textContent = selected ? '✓' : 'G';
+      });
+      const field = genSel.closest('.field');
+      if (field) field.classList.remove('is-invalid');
+    });
     // Real-time: gen ditambah/diubah di tab lain -> perbarui pilihan di sini
     window.addEventListener('storage', (e) => { if (e.key === KSF.GEN_KEY) fillGenSelect(); });
 
@@ -1239,13 +1263,14 @@
     let cnList = [];
     let selectedCN = '';
 
-    // Ganti placeholder nickname tanpa mengubah karakter lain di template.
+    // Tebalkan huruf/angka nama; simbol dan glyph lain pada template tetap utuh.
     function buildCN(name) {
       const cleanName = String(name || '').trim();
+      const styledName = toBold(cleanName);
       const cns = (KSF.getCNs ? KSF.getCNs() : []) || [];
       return cns.map(c => String(c.tpl == null ? '' : c.tpl)
-        .replace(/\{\{\s*name\s*\}\}/gi, cleanName)
-        .replace(/\bname\b/gi, cleanName));
+        .replace(/\{\{\s*name\s*\}\}/gi, styledName)
+        .replace(/\bname\b/gi, styledName));
     }
 
     const $cnBlock = $('#cnBlock');

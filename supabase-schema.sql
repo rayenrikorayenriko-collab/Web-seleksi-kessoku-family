@@ -88,7 +88,7 @@ insert into public.hashtags (tag, count) values
 on conflict (tag) do nothing;
 
 insert into public.cns (id, tpl) values
-  ('cn1','name 𝖋𝖙`𝙆𝙎𝙁᭄'),
-  ('cn2','name〆`𝙆𝙎𝙁'),
-  ('cn3','ケ-name')
+  ('cn1','ケ-{{name}}'),
+  ('cn2','{{name}}〆`𝙆𝙎𝙁'),
+  ('cn3','{{name}} 𝖋𝖙`𝙆𝙎𝙁᭄')
 on conflict (id) do nothing;

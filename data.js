@@ -432,9 +432,9 @@ window.KSF = (function () {
   // ---- Manajemen CN (bar CN di halaman daftar) ----
   // Kata kunci `name` pada template akan diganti nama pendaftar secara otomatis.
   const DEFAULT_CNS = [
-    { id: 'cn1', tpl: '{{name}} | KSF' },
-    { id: 'cn2', tpl: '{{name}} 〆 KSF' },
-    { id: 'cn3', tpl: 'KSF • {{name}}' }
+    { id: 'cn1', tpl: 'ケ-{{name}}' },
+    { id: 'cn2', tpl: '{{name}}〆`𝙆𝙎𝙁' },
+    { id: 'cn3', tpl: '{{name}} 𝖋𝖙`𝙆𝙎𝙁᭄' }
   ];
   function getCNs() {
     const raw = localStorage.getItem(CN_KEY);
@@ -443,9 +443,12 @@ window.KSF = (function () {
       const v = JSON.parse(raw);
       if (!Array.isArray(v)) return DEFAULT_CNS.map(c => ({ ...c }));
       const legacy = {
-        'name 𝖋𝖙`𝙆𝙎𝙁᭄': DEFAULT_CNS[0].tpl,
+        '{{name}} | KSF': DEFAULT_CNS[0].tpl,
+        '{{name}} 〆 KSF': DEFAULT_CNS[1].tpl,
+        'KSF • {{name}}': DEFAULT_CNS[2].tpl,
+        'name 𝖋𝖙`𝙆𝙎𝙁᭄': DEFAULT_CNS[2].tpl,
         'name〆`𝙆𝙎𝙁': DEFAULT_CNS[1].tpl,
-        'ケ-name': DEFAULT_CNS[2].tpl
+        'ケ-name': DEFAULT_CNS[0].tpl
       };
       return v.map(c => Object.assign({}, c, { tpl: legacy[c.tpl] || c.tpl }));
     }

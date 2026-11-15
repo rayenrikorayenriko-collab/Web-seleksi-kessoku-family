@@ -210,9 +210,10 @@
             <div class="field">
               <input type="email" id="email" placeholder=" " required /><label for="email">Email Aktif</label><span class="field__line"></span>
             </div>
-            <div class="field">
-              <select id="gen" required></select>
-              <label for="gen" class="label--static">Pilih Gen</label><span class="field__line"></span>
+            <div class="field field--full gen-select-field">
+              <input type="hidden" id="gen" required>
+              <span class="label--static gen-picker-label">Pilih Gen</span>
+              <div class="gen-picker" id="genPicker" role="group" aria-label="Pilih generasi untuk pendaftaran"></div>
             </div>
             <div class="field field--full">
               <textarea id="alasan" rows="4" placeholder=" " required></textarea><label for="alasan">Alasan ingin bergabung</label><span class="field__line"></span>
@@ -229,8 +230,6 @@
 
           <aside class="panel gcard reveal" style="--d:1">
             <div class="panel__row"><span>Status</span><b class="ok"><span class="badge__dot"></span> Dibuka</b></div>
-            <div class="panel__row"><span>Kuota GenV3</span><b>Segera</b></div>
-            <div class="panel__row"><span>Review</span><b>1×24 jam</b></div>
             <div class="panel__row"><span>Total member</span><b data-stat="members">0</b></div>
             <div class="panel__steps">
               <div class="step is-done"><i>1</i><span>Isi formulir</span></div>
